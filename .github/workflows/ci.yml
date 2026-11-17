@@ -1,0 +1,42 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [staging, main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      # Os testes usam a fake_org (remotos locais), então não precisam dos submódulos.
+      - uses: actions/checkout@v4
+        with:
+          submodules: false
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      # Requer uv.lock commitado.
+      - run: uv sync --locked --dev
+      - run: uv run ruff check .
+      - run: uv run ruff format --check .
+      - run: uv run pytest -q
+
+  skills:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python scripts/validate_skills.py
+      - run: python scripts/sync_skills.py --check

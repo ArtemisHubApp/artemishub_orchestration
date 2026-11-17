@@ -1,0 +1,118 @@
+# Workflow reutilizável de CI para os repos Python do ArtemisHub.
+#
+# Como chamar num repo filho (.github/workflows/ci.yml):
+#
+#   on:
+#     pull_request:
+#     push: { branches: [staging, main] }
+#   jobs:
+#     ci:
+#       uses: ArtemisHubApp/artemishub_orchestration/.github/workflows/python-ci.yml@main
+#       # with: { python-versions: '["3.12", "3.13"]', run-pyright: false }
+#
+# Requisitos no repo filho: uv.lock commitado; grupo dev com ruff e pytest.
+# Se o pyproject.toml tiver [tool.importlinter], import-linter também precisa
+# estar no grupo dev (o passo roda `uv run lint-imports`).
+name: Python CI
+
+on:
+  workflow_call:
+    inputs:
+      python-versions:
+        description: Lista JSON de versões do Python para a matriz de testes
+        type: string
+        default: '["3.12"]'
+      run-pyright:
+        description: Roda pyright (apenas aviso, não reprova o CI)
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+jobs:
+  no-local-skills:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Skills não podem ser copiadas para o repo
+        run: |
+          found=0
+          for p in .claude/skills .agents/skills agent/skills skills-lock.json; do
+            if [ -e "$p" ]; then
+              echo "::error::skills ficam no artemishub_orchestration (encontrado: $p)"
+              found=1
+            fi
+          done
+          exit $found
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - run: uv lock --check
+      - run: uv sync --locked --dev
+      - run: uv run ruff check .
+      - run: uv run ruff format --check .
+      - name: import-linter (se configurado)
+        run: |
+          if grep -q '\[tool.importlinter\]' pyproject.toml; then
+            uv run lint-imports
+          else
+            echo "pyproject.toml sem [tool.importlinter]; pulando."
+          fi
+      - name: pyright (apenas aviso)
+        if: ${{ inputs.run-pyright }}
+        continue-on-error: true
+        run: uvx pyright
+
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ${{ fromJSON(inputs.python-versions) }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+          python-version: ${{ matrix.python-version }}
+      - run: uv sync --locked --dev
+      - run: uv run pytest -q
+
+  pr-title:
+    # Para workflow reutilizável, github.event_name é o evento do repo chamador.
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - uses: amannn/action-semantic-pull-request@v5
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          # `release` é o título dos PRs staging -> main.
+          types: |
+            feat
+            fix
+            chore
+            docs
+            refactor
+            test
+            ci
+            release
+
+  gitleaks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
