@@ -8,6 +8,7 @@ Você vai guiar uma pessoa que pode NÃO ser desenvolvedora a preparar o ambient
    - Git e Python (versão 3.11 ou mais nova) são obrigatórios. Docker é necessário só para rodar os serviços; se faltar, avise que dá para continuar e instalar depois.
    - Se algo faltar, explique como instalar, sem instalar nada sozinho:
      - Windows: Git em https://git-scm.com/download/win, Python em https://www.python.org/downloads/ (marque "Add python.exe to PATH") e Docker Desktop em https://www.docker.com/products/docker-desktop/. Alternativa pelo terminal: `winget install Git.Git`, `winget install Python.Python.3.12` e `winget install Docker.DockerDesktop`.
+     - Linux: Debian/Ubuntu `sudo apt install git python3 docker.io`; Fedora `sudo dnf install git python3 docker`.
      - macOS: instale o Homebrew (https://brew.sh) e rode `brew install git python` e `brew install --cask docker`.
    - Peça para a pessoa me avisar quando terminar de instalar e rode a conferência de novo.
 2. Com tudo pronto, explique que vai baixar os 5 repositórios do projeto (docs, frontend, backend, agents e rag) e rode `python scripts/setup.py` (use `python3` se `python` não existir).

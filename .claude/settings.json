@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python \"$CLAUDE_PROJECT_DIR/.claude/hooks/submodule_context.py\""
+            "command": "sh -c 'if python3 -c \"\" >/dev/null 2>&1; then exec python3 \"$0\"; else exec python \"$0\"; fi' \"$CLAUDE_PROJECT_DIR/.claude/hooks/submodule_context.py\""
           }
         ]
       }

@@ -3,11 +3,13 @@
 import importlib.util
 import json
 import os
+import shutil
 import subprocess
 import sys
 from pathlib import Path
 
 import artemis_repos
+import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
 HOOK = ROOT / ".claude" / "hooks" / "submodule_context.py"
@@ -16,6 +18,12 @@ _spec = importlib.util.spec_from_file_location("submodule_context", HOOK)
 hook = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(hook)
 handle = hook.handle
+
+
+COMANDO_HOOK = (
+    "sh -c 'if python3 -c \"\" >/dev/null 2>&1; then exec python3 \"$0\"; else exec python \"$0\"; fi' "
+    '"$CLAUDE_PROJECT_DIR/.claude/hooks/submodule_context.py"'
+)
 
 
 def _payload(session: str, path: str, chave: str = "file_path") -> dict:
@@ -106,7 +114,7 @@ def test_settings_json_valido_e_com_hook():
     assert grupo["matcher"] == "Read|Edit|Write"
     (h,) = grupo["hooks"]
     assert h["type"] == "command"
-    assert h["command"] == 'python "$CLAUDE_PROJECT_DIR/.claude/hooks/submodule_context.py"'
+    assert h["command"] == COMANDO_HOOK
     assert set(cfg["permissions"]["deny"]) == {
         "Read(**/.venv/**)", "Read(**/node_modules/**)", "Read(**/data/**)",
         "Read(**/chroma*/**)", "Read(**/*.lock)",
@@ -122,3 +130,14 @@ def test_comandos_existem_com_description():
     assert "python scripts/setup.py" in (ROOT / ".claude/commands/start.md").read_text(encoding="utf-8")
     assert "python scripts/sync.py" in (ROOT / ".claude/commands/sync.md").read_text(encoding="utf-8")
     assert "python scripts/worktree.py new" in (ROOT / ".claude/commands/worktree.md").read_text(encoding="utf-8")
+
+
+@pytest.mark.skipif(shutil.which("sh") is None, reason="sh indisponível")
+def test_comando_configurado_roda_no_sh(tmp_path):
+    cfg = json.loads((ROOT / ".claude" / "settings.json").read_text(encoding="utf-8"))
+    comando = cfg["hooks"]["PreToolUse"][0]["hooks"][0]["command"]
+    entrada = json.dumps(_payload("sessao-sh-teste", str(ROOT / "artemishub_docs/a.md")))
+    env = {**os.environ, "CLAUDE_PROJECT_DIR": str(ROOT), "TMPDIR": str(tmp_path)}
+    r = subprocess.run(["sh", "-c", comando], input=entrada, text=True, capture_output=True, env=env)
+    assert r.returncode == 0
+    assert "artemishub_docs/AGENTS.md" in json.loads(r.stdout)["hookSpecificOutput"]["additionalContext"]
