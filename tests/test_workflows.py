@@ -72,7 +72,8 @@ def test_pr_title_so_em_pull_request():
 
 def test_gitleaks_historico_completo():
     for nome, job in [("python-ci.yml", load("python-ci.yml")["jobs"]["gitleaks"])]:
-        assert any(u.startswith("gitleaks/gitleaks-action@v2") for u in usos(job)), nome
+        assert "ghcr.io/gitleaks/gitleaks" in runs(job), nome
+        assert not any("gitleaks-action" in u for u in usos(job)), nome
         checkout = next(s for s in job["steps"] if s["uses"].startswith("actions/checkout"))
         assert checkout["with"]["fetch-depth"] == 0
 
@@ -88,7 +89,8 @@ def test_todos_os_jobs_com_permissao_minima():
 def test_ci_do_orquestrador():
     wf = load("ci.yml")
     g = gatilhos(wf)
-    assert "pull_request" in g and g["push"]["branches"] == ["staging", "main"]
+    assert "edited" in g["pull_request"]["types"] and g["push"]["branches"] == ["staging", "main"]
+    assert "pull_request" in wf["concurrency"]["cancel-in-progress"]
     assert set(wf["jobs"]) == {"tests", "skills"}
     tests = wf["jobs"]["tests"]
     checkout = next(s for s in tests["steps"] if s["uses"].startswith("actions/checkout"))
@@ -105,5 +107,12 @@ def test_gitleaks_do_orquestrador():
     g = gatilhos(wf)
     assert "pull_request" in g and "push" in g
     job = wf["jobs"]["gitleaks"]
-    assert any(u.startswith("gitleaks/gitleaks-action@v2") for u in usos(job))
-    assert "GITHUB_TOKEN" in next(s for s in job["steps"] if "gitleaks-action" in s.get("uses", ""))["env"]
+    assert "ghcr.io/gitleaks/gitleaks" in runs(job) and " git /repo" in runs(job)
+    assert not any("gitleaks-action" in u for u in usos(job))
+    assert "edited" in g["pull_request"]["types"]
+
+
+def test_snippet_do_chamador_tem_permissions_e_edited():
+    cab = (WF / "python-ci.yml").read_text(encoding="utf-8").split("name: Python CI")[0]
+    assert "permissions: { contents: read, pull-requests: read }" in cab
+    assert "edited" in cab

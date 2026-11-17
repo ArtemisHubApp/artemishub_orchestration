@@ -4,11 +4,17 @@
 #
 #   on:
 #     pull_request:
+#       types: [opened, edited, synchronize, reopened]
 #     push: { branches: [staging, main] }
+#   permissions: { contents: read, pull-requests: read }
 #   jobs:
 #     ci:
 #       uses: ArtemisHubApp/artemishub_orchestration/.github/workflows/python-ci.yml@main
 #       # with: { python-versions: '["3.12", "3.13"]', run-pyright: false }
+#
+# O repo chamador PRECISA conceder `permissions` (acima): um workflow chamado
+# não eleva o token do chamador, e o job pr-title pede pull-requests: read.
+# O tipo `edited` faz o check de título rodar de novo quando o título é corrigido.
 #
 # Requisitos no repo filho: uv.lock commitado; grupo dev com ruff e pytest.
 # Se o pyproject.toml tiver [tool.importlinter], import-linter também precisa
@@ -113,6 +119,6 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - uses: gitleaks/gitleaks-action@v2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: gitleaks (CLI oficial via container, sem licença)
+        # `git` é o subcomando atual do gitleaks v8; `detect` está obsoleto.
+        run: docker run --rm -v "$PWD:/repo" ghcr.io/gitleaks/gitleaks:latest git /repo --redact --verbose
