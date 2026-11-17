@@ -53,6 +53,8 @@ O Grupo 11 (Camila, Amanda, Ana Julia, Eduarda) desenvolve o Artemis em 5 reposi
 - Foco: facilitar o vibecoding e centralizar as regras de SDD.
 - Precisa funcionar com Codex, Gemini, Claude e GPT.
 - Superpowers é imprescindível, e no Claude entra como plugin.
+- A equipe usa Windows: sem links simbólicos e com scripts multiplataforma.
+- PR para limpar as cópias de skills do `artemishub_rag` depois que o orquestrador estiver no ar.
 - Esteira de SDD: Superpowers mais a skill `artemis-sdd`. A `orchestrator` do RAG, que aponta para etapas inexistentes, não vem para o orquestrador.
 
 ## 6. Design
@@ -71,10 +73,12 @@ artemishub_orchestration/
 ├── CLAUDE.md                   # 1 linha: @AGENTS.md (Claude Code importa)
 ├── GEMINI.md                   # 1 linha: @AGENTS.md (Gemini CLI importa; alternativa: contextFileName em .gemini/settings.json)
 ├── README.md                   # como começar (humanos) + tabela de repos
-├── Makefile                    # setup, sync, status, help
-├── scripts/
-│   ├── setup.sh                # init dos submódulos + checagens básicas
-│   └── sync.sh                 # atualiza o orquestrador e cada submódulo na main
+├── Makefile                    # atalho opcional (macOS/Linux): make setup → python scripts/setup.py
+├── scripts/                    # em Python, não bash, para rodar igual no Windows
+│   ├── setup.py                # init dos submódulos na main + checagens básicas
+│   ├── sync.py                 # atualiza o orquestrador e cada submódulo na main
+│   ├── status.py               # branch e pendências de cada submódulo
+│   └── sync_skills.py          # copia .claude/skills/artemis-sdd → .agents/skills/artemis-sdd
 ├── .claude/
 │   ├── settings.json           # hooks + bloqueio de leitura de .venv, node_modules, data/, chroma
 │   ├── hooks/
@@ -88,7 +92,9 @@ artemishub_orchestration/
 ├── skills-lock.json            # de onde veio cada skill do Superpowers (versão/hash)
 ├── .github/workflows/
 │   ├── gitleaks.yml            # vazamento de segredo
-│   └── validate-skills.yml     # frontmatter das skills válido
+│   ├── validate-skills.yml     # frontmatter das skills válido
+│   └── skills-in-sync.yml      # falha se as duas cópias de artemis-sdd divergirem
+├── .gitattributes              # * text=auto eol=lf (evita CRLF do Windows em .md/.py)
 └── .gitignore                  # .env* (menos .env.example), worktrees, .DS_Store
 ```
 
@@ -123,7 +129,8 @@ Decidido pela Amanda: Superpowers como esteira, mais uma skill do projeto.
 - **Superpowers é obrigatório** (decisão da Amanda) e chega a cada agente pelo melhor caminho:
   - **Claude:** pelo **plugin oficial**, habilitado no `.claude/settings.json` do repo (`extraKnownMarketplaces` + `enabledPlugins`). Quem abre o repo no Claude Code recebe o pedido de instalação. O plugin já traz o hook de início de sessão que carrega o `using-superpowers`, e a cópia em pasta não faz isso.
   - **Codex, Gemini e GPT:** por uma **cópia única em `.agents/skills/`**, com `skills-lock.json` registrando a origem, no formato que o RAG já usa. Atualizar essa cópia é um PR no orquestrador.
-  - **Para o Claude não ver as skills em dobro**, `.claude/skills/` **não** aponta para `.agents/skills/` inteiro: contém só a `artemis-sdd`, como link ou cópia (ver Q3). O Claude pega o Superpowers pelo plugin e a `artemis-sdd` pela pasta.
+  - **Para o Claude não ver as skills em dobro**, `.claude/skills/` **não** aponta para `.agents/skills/` inteiro: contém só a `artemis-sdd`. O Claude pega o Superpowers pelo plugin e a `artemis-sdd` pela pasta.
+  - **Sem links simbólicos.** A equipe usa Windows, onde links do git costumam virar arquivos de texto. A `artemis-sdd` é editada em `.claude/skills/artemis-sdd/`. O `scripts/sync_skills.py` copia a pasta para `.agents/skills/artemis-sdd/`, e as duas cópias são commitadas. O CI `skills-in-sync` falha se elas divergirem, então a duplicação é controlada e não vira drift.
 - **Escrever uma skill do projeto, `artemis-sdd`, em `.claude/skills/`**, com o que é só do Artemis:
   - classificação de tamanho (S0 edição direta, S1 plano curto, S2/S3 spec completa);
   - onde salvar spec e plano;
@@ -137,9 +144,11 @@ Decidido pela Amanda: Superpowers como esteira, mais uma skill do projeto.
 
 ### 6.5 Comandos e scripts
 
-- `make setup` / `scripts/setup.sh`: confere `git` e `python3`, roda `git submodule update --init --recursive` e coloca cada submódulo na `main` (`git submodule foreach 'git checkout main && git pull'`). Os submódulos não ficam em *detached HEAD*: quem faz vibecoding não deve tropeçar nisso.
-- `make sync` / `/sync`: `git pull` no orquestrador e `pull` na `main` de cada submódulo, avisando quando houver mudança local não commitada (sem descartar nada).
-- `make status`: branch e mudanças pendentes de cada submódulo.
+Todos os scripts são Python 3, só com a biblioteca padrão, e rodam igual em Windows, macOS e Linux (`python scripts/setup.py`). O `Makefile` é só atalho para quem tem `make`. Os hooks no `settings.json` chamam o interpretador de um jeito que funcione no Windows, onde muitas vezes não existe `python3`; quem construir testa isso.
+
+- `scripts/setup.py` (ou `make setup`): confere `git` e Python, roda `git submodule update --init --recursive` e coloca cada submódulo na `main` (`git submodule foreach 'git checkout main && git pull'`). Os submódulos não ficam em *detached HEAD*: quem faz vibecoding não deve tropeçar nisso.
+- `scripts/sync.py` (ou `make sync`, ou `/sync`): `git pull` no orquestrador e `pull` na `main` de cada submódulo, avisando quando houver mudança local não commitada (sem descartar nada).
+- `scripts/status.py` (ou `make status`): branch e mudanças pendentes de cada submódulo.
 - `/start`: roda o setup e explica cada passo em português simples.
 
 **Ponteiros dos submódulos:** a equipe trabalha sempre na `main` de cada repo. O SHA gravado no orquestrador é informativo, atualizado por um commit `chore: bump submodules` quando alguém quiser, sem cobrança. Essa é **minha decisão**, igual ao `--remote` do Kyte.
@@ -147,7 +156,7 @@ Decidido pela Amanda: Superpowers como esteira, mais uma skill do projeto.
 ### 6.6 Mudanças nos repos filhos (PRs separados, depois do orquestrador)
 
 - Cada repo ganha um `AGENTS.md` curto: o que o repo é, como rodar e testar, e a frase "Regras gerais e de SDD: veja o `artemishub_orchestration`."
-- `artemishub_rag`: remover `.agents/skills`, `.claude/skills`, `agent/skills` e `skills-lock.json` depois que o orquestrador estiver no ar. Ver **Q3**.
+- `artemishub_rag`: um PR para remover `.agents/skills`, `.claude/skills`, `agent/skills` e `skills-lock.json`, aberto depois que o orquestrador estiver no ar (aprovado pela Amanda; combinar o merge com quem cuida do RAG). O `docs/superpowers/plans/` do RAG fica onde está.
 
 ## 7. Deixado para quem constrói
 
@@ -157,7 +166,7 @@ Decidido pela Amanda: Superpowers como esteira, mais uma skill do projeto.
 
 ## 8. Critérios de sucesso
 
-- `git clone --recurse-submodules … && make setup` funciona numa máquina limpa e deixa os 5 repos na `main`.
+- `git clone --recurse-submodules … && python scripts/setup.py` funciona numa máquina limpa, **inclusive no Windows**, e deixa os 5 repos na `main`.
 - Numa sessão nova aberta na raiz, no Claude Code, no Codex e no Gemini CLI, a pergunta "o que é o artemishub_agents e como eu rodo o RAG?" é respondida certo sem colar contexto.
 - Editar um arquivo em `artemishub_rag/` dispara o aviso do hook uma vez.
 - Pedir "implementa X" leva o agente a criar ou pedir a issue e seguir a esteira de SDD na profundidade certa.
