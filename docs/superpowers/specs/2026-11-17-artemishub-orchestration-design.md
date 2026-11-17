@@ -52,6 +52,8 @@ O Grupo 11 (Camila, Amanda, Ana Julia, Eduarda) desenvolve o Artemis em 5 reposi
 - Nome: `artemishub_orchestration`, na org `ArtemisHubApp`.
 - Foco: facilitar o vibecoding e centralizar as regras de SDD.
 - Precisa funcionar com Codex, Gemini, Claude e GPT.
+- Superpowers é imprescindível, e no Claude entra como plugin.
+- Esteira de SDD: Superpowers mais a skill `artemis-sdd`. A `orchestrator` do RAG, que aponta para etapas inexistentes, não vem para o orquestrador.
 
 ## 6. Design
 
@@ -81,8 +83,8 @@ artemishub_orchestration/
 │   ├── commands/
 │   │   ├── start.md            # /start: setup explicado em português simples
 │   │   └── sync.md             # /sync: atualiza tudo e mostra o que mudou
-│   └── skills -> ../.agents/skills   # link, não cópia
-├── .agents/skills/             # CÓPIA ÚNICA das skills (Superpowers + artemis-sdd), ver 6.3
+│   └── skills/artemis-sdd      # só a skill do projeto; Superpowers vem pelo plugin (ver 6.3)
+├── .agents/skills/             # Superpowers + artemis-sdd para Codex/Gemini/GPT (cópia única)
 ├── skills-lock.json            # de onde veio cada skill do Superpowers (versão/hash)
 ├── .github/workflows/
 │   ├── gitleaks.yml            # vazamento de segredo
@@ -115,10 +117,13 @@ Fonte única, em português, com no máximo cerca de 250 linhas. Seções:
 
 ### 6.3 Regras de SDD
 
-Ver pergunta **Q1**. A proposta deste rascunho, como **minha decisão**, é:
+Decidido pela Amanda: Superpowers como esteira, mais uma skill do projeto.
 
-- **Usar o Superpowers como esteira de SDD:** brainstorming → spec → writing-plans → test-driven-development → subagent-driven-development ou executing-plans → requesting-code-review → finishing-a-development-branch. Ele já é usado pela equipe e está completo.
-- **Uma cópia única do Superpowers em `.agents/skills/`**, com `skills-lock.json` registrando a origem, no mesmo formato que o RAG já usa. Plugin não serve aqui, porque só o Claude o enxergaria. `.claude/skills` é um link para essa pasta. Atualizar o Superpowers é um PR no orquestrador.
+- **Superpowers como esteira de SDD:** brainstorming → spec → writing-plans → test-driven-development → subagent-driven-development ou executing-plans → requesting-code-review → finishing-a-development-branch. Ele já é usado pela equipe e está completo.
+- **Superpowers é obrigatório** (decisão da Amanda) e chega a cada agente pelo melhor caminho:
+  - **Claude:** pelo **plugin oficial**, habilitado no `.claude/settings.json` do repo (`extraKnownMarketplaces` + `enabledPlugins`). Quem abre o repo no Claude Code recebe o pedido de instalação. O plugin já traz o hook de início de sessão que carrega o `using-superpowers`, e a cópia em pasta não faz isso.
+  - **Codex, Gemini e GPT:** por uma **cópia única em `.agents/skills/`**, com `skills-lock.json` registrando a origem, no formato que o RAG já usa. Atualizar essa cópia é um PR no orquestrador.
+  - **Para o Claude não ver as skills em dobro**, `.claude/skills/` **não** aponta para `.agents/skills/` inteiro: contém só a `artemis-sdd`, como link ou cópia (ver Q3). O Claude pega o Superpowers pelo plugin e a `artemis-sdd` pela pasta.
 - **Escrever uma skill do projeto, `artemis-sdd`, em `.claude/skills/`**, com o que é só do Artemis:
   - classificação de tamanho (S0 edição direta, S1 plano curto, S2/S3 spec completa);
   - onde salvar spec e plano;
