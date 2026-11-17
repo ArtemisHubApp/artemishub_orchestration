@@ -61,6 +61,7 @@ O Grupo 11 (Camila, Amanda, Ana Julia, Eduarda) desenvolve o Artemis em 5 reposi
 - Regra de branches: worktree + branch a partir da `staging`, e só depois `staging → main` (produção) (6.10).
 - Regras de higiene do GitHub são importantes (6.11).
 - Regras de código limpo e clean architecture (6.12).
+- Regras explícitas de rastreabilidade: toda tarefa com issue associada, e docs sempre atualizadas quando algo relevante muda (6.2).
 - Esteira de SDD: Superpowers mais a skill `artemis-sdd`. A `orchestrator` do RAG, que aponta para etapas inexistentes, não vem para o orquestrador.
 
 ## 6. Design
@@ -115,12 +116,12 @@ Fonte única, em português, com no máximo cerca de 250 linhas. Seções:
 2. **Mapa de repos:** tabela com pasta, responsabilidade, stack, como rodar e status. Por exemplo, `rag`: Python 3.11/3.12, ChromaDB, `python -m src.demo`; `backend`/`frontend`: stack a definir.
 3. **Regra de ouro:** "Quero mexer em X → leia `X/AGENTS.md` (ou o README de X, se ainda não existir) antes." PRs vão para o repo do submódulo, nunca para o orquestrador.
 4. **Regras de SDD (inegociáveis)**, conteúdo detalhado em 6.3:
-   - Nada de código sem issue no kanban.
+   - **Toda tarefa tem uma issue associada** (rastreabilidade): nada de código, doc ou configuração sem issue no kanban; a branch leva o número (`feat/<nº>-…`) e o PR fecha a issue (`Closes #<nº>`). Se a issue não existir, o agente cria ou pede antes de começar.
    - Toda mudança passa pelo fluxo de SDD na profundidade do tamanho dela.
    - Spec e plano ficam versionados no repo do submódulo, em `docs/superpowers/specs/` e `docs/superpowers/plans/`.
    - Teste antes do código em mudança de comportamento.
    - PR com `Closes #<n>`, revisado por outra integrante.
-   - Documentação atualizada no mesmo PR.
+   - **Docs sempre atualizadas quando algo relevante muda** (comportamento, comando, configuração, arquitetura, dependência): README/`AGENTS.md` do repo, `artemishub_docs` e ADR quando couber, no mesmo PR — PR que muda algo relevante sem tocar doc precisa dizer por quê.
 5. **Fluxo do kanban:** resumo e link para `artemishub_docs/docs/guias/kanban.md` (sem duplicar).
 6. **Segurança:** nunca commitar `.env`; repos públicos; nenhum dado pessoal real em fixtures (LGPD).
 7. **Lições de submódulo:**

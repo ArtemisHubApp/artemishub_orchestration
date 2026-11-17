@@ -222,12 +222,13 @@ def test_prune_remove_worktree_mergeada_limpa(fake_org): ...   # merge real (anc
 
 **Conteúdo da `artemis-sdd/SKILL.md`:** `name: artemis-sdd`. A `description` começa com "Use antes de qualquer mudança de código ou doc nos repos do Artemis". O corpo tem:
 1. classificar a tarefa de S0 a S3 (S0 = edição trivial direta; S1 = plano curto com critérios de aceite e teste se o comportamento mudar; S2/S3 = brainstorming → spec → plano → TDD → execução → review do Superpowers);
-2. issue no kanban antes de codar, com a semana marcada;
+2. **toda tarefa tem issue associada** (rastreabilidade): sem issue, o agente cria (`gh issue create`) ou pede antes de começar; a semana fica marcada; branch e PR carregam o número;
 3. worktree com `python scripts/worktree.py new <repo> <tipo>/<nº>-<slug>`, nunca commit direto em `staging` ou `main`;
 4. spec e plano salvos no **repo do submódulo**, em `docs/superpowers/{specs,plans}/`;
 5. ADR no `artemishub_docs` (`docs/arquitetura/decisoes/`) quando a mudança muda arquitetura, stack ou processo;
-6. checklist de PR (`Closes #`, título no padrão Conventional Commits, testes, docs, ADR, `codigo-limpo.md`);
-7. para agentes sem o Superpowers nativo: "abra `.agents/skills/<skill>/SKILL.md` e siga".
+6. **docs sempre atualizadas quando algo relevante muda** (comportamento, comando, configuração, arquitetura, dependência): README/`AGENTS.md` do repo, `artemishub_docs`, ADR quando couber, no mesmo PR; se não mudou doc, o PR diz por quê;
+7. checklist de PR (`Closes #`, título no padrão Conventional Commits, testes, docs, ADR, `codigo-limpo.md`);
+8. para agentes sem o Superpowers nativo: "abra `.agents/skills/<skill>/SKILL.md` e siga".
 
 **Conteúdo do `codigo-limpo.md`:** as seções 1 a 4 do `artemishub_rag/.agents/skills/orchestrator/references/coding-principles.md`, mantendo a nota de atribuição (andrej-karpathy-skills, MIT) e tirando as menções a etapas que não existem (`grill`, `build`, tiers T0–T3). Depois vêm a lista de código limpo e o diagrama e as regras de clean architecture, copiados do spec 6.12 item 1, mais a regra de migração gradual.
 
@@ -279,6 +280,9 @@ def test_agents_md_tem_secoes_e_tamanho():
     assert all(h in t for h in TITULOS) and len(t.splitlines()) <= 250
 def test_links_locais_existem():   # todo link relativo [x](caminho) do AGENTS.md aponta para arquivo existente
     ...
+def test_regras_de_rastreabilidade_explicitas():
+    t = (ROOT / "AGENTS.md").read_text(encoding="utf-8")
+    assert "Toda tarefa tem uma issue associada" in t and "Docs sempre atualizadas" in t
 def test_claude_e_gemini_importam():
     assert (ROOT / "CLAUDE.md").read_text() == (ROOT / "GEMINI.md").read_text() == "@AGENTS.md\n"
 ```
