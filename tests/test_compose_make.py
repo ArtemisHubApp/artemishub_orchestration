@@ -52,3 +52,12 @@ def test_make_worktree_exige_repo_e_branch():
     r = subprocess.run(["make", "worktree"], cwd=ROOT, capture_output=True, check=False, text=True)
     assert r.returncode != 0
     assert "REPO=" in r.stderr + r.stdout
+
+
+@precisa_make
+def test_make_prune_e_ensaio_e_prune_yes_remove():
+    def plano(alvo):
+        return subprocess.run(["make", "-n", alvo], cwd=ROOT, capture_output=True, check=False, text=True).stdout
+
+    assert "worktree.py prune" in plano("prune") and "--yes" not in plano("prune")
+    assert "worktree.py prune --yes" in plano("prune-yes")

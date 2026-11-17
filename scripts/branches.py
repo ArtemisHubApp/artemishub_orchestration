@@ -50,7 +50,7 @@ def _ref_julgada(repo_dir: Path, branch: str, remoto: bool) -> str | None:
     return next((r for r in candidatas if _ref_existe(repo_dir, r)), None)
 
 
-def _e_ancestral(repo_dir: Path, ref: str, base: str) -> bool:
+def e_ancestral(repo_dir: Path, ref: str, base: str) -> bool:
     if not _ref_existe(repo_dir, f"origin/{base}"):
         return False
     return (
@@ -74,7 +74,7 @@ def merged_status(repo_dir: Path, branch: str, base: str, remoto: bool = False) 
     if ref is None:
         return "desconhecido"
     pr = _gh_pr_mergeado(repo_dir, branch, git("rev-parse", ref, cwd=repo_dir))
-    if pr or _e_ancestral(repo_dir, ref, base):
+    if pr or e_ancestral(repo_dir, ref, base):
         return "mergeada"
     return "aberta" if pr is False else "desconhecido"
 

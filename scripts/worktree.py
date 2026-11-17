@@ -7,7 +7,7 @@ import re
 from pathlib import Path
 
 from artemis_repos import REPOS, ROOT, base_branch, git, is_dirty, resolve_repo, worktrees_root
-from branches import merged_status
+from branches import e_ancestral, merged_status
 
 BRANCH_RE = re.compile(r"^(feat|fix|chore|docs|refactor|test|ci)/\d+-[a-z0-9]+(-[a-z0-9]+)*$")
 
@@ -31,7 +31,8 @@ def new(repo: str, branch: str, root: Path = ROOT) -> Path:
     git("fetch", "origin", cwd=repo_dir)
     base = base_branch(repo_dir)
     destino.parent.mkdir(parents=True, exist_ok=True)
-    git("worktree", "add", "-b", branch, str(destino), f"origin/{base}", cwd=repo_dir)
+    # --no-track: a branch nova não segue origin/<base>; o 1º push é `git push -u origin <branch>`.
+    git("worktree", "add", "--no-track", "-b", branch, str(destino), f"origin/{base}", cwd=repo_dir)
     return destino
 
 
@@ -52,8 +53,43 @@ def list_(root: Path = ROOT) -> list[dict]:
     return itens
 
 
+def _teve_commit_proprio(repo_dir: Path, branch: str, base: str) -> bool:
+    """Prova de que a branch não é só uma worktree recém-criada (cuja ponta também é ancestral da base).
+
+    Vale: ter sido publicada (`origin/<branch>`), ter commits fora de `origin/<base>`,
+    ou o reflog da branch ter mais que a entrada de criação.
+    """
+    if git("rev-parse", "--verify", "--quiet", f"refs/remotes/origin/{branch}", cwd=repo_dir, check=False):
+        return True
+    if git("rev-list", "--max-count=1", f"origin/{base}..refs/heads/{branch}", cwd=repo_dir, check=False):
+        return True
+    reflog = git("reflog", "show", "--format=%H", f"refs/heads/{branch}", "--", cwd=repo_dir, check=False)
+    return len(reflog.splitlines()) > 1
+
+
+def _apaga_branch_se_contida(repo_dir: Path, branch: str, base: str) -> None:
+    """Apaga a branch local só se a ponta já está em `origin/<base>` (equivale a `branch -d`, nunca `-D`).
+
+    Sem upstream (--no-track), `git branch -d` compararia com o HEAD do checkout principal; por isso a prova
+    é a ancestralidade em `origin/<base>`, e o `update-ref` só apaga se a ponta ainda for a mesma.
+    """
+    ref = f"refs/heads/{branch}"
+    sha = git("rev-parse", "--verify", "--quiet", ref, cwd=repo_dir, check=False)
+    if sha and e_ancestral(repo_dir, ref, base):
+        git("update-ref", "-d", ref, sha, cwd=repo_dir, check=False)
+
+
+def ignorados(path: Path) -> list[str]:
+    """Arquivos ignorados pelo git na worktree (`.env`, `.venv/`, `data/`...): `worktree remove` apaga junto."""
+    saida = git("status", "--porcelain", "--ignored", cwd=path, check=False)
+    return [linha[3:] for linha in saida.splitlines() if linha.startswith("!! ")]
+
+
 def prune(root: Path = ROOT, dry_run: bool = True) -> list[Path]:
-    """Remove só worktrees limpas cuja branch está `mergeada`; devolve as removidas (ou que seriam)."""
+    """Remove só worktrees limpas cuja branch está `mergeada`; devolve as removidas (ou que seriam).
+
+    Worktree cuja branch nunca teve commit próprio (recém-criada) nunca é removida.
+    """
     removidas = []
     for repo in REPOS:
         repo_dir = root / repo
@@ -61,11 +97,13 @@ def prune(root: Path = ROOT, dry_run: bool = True) -> list[Path]:
         base = base_branch(repo_dir)
         for item in (i for i in list_(root) if i["repo"] == repo):
             path, branch = item["path"], item["branch"]
+            if not _teve_commit_proprio(repo_dir, branch, base):
+                continue
             if merged_status(repo_dir, branch, base) != "mergeada" or is_dirty(path):
                 continue
             if not dry_run:
                 git("worktree", "remove", str(path), cwd=repo_dir)
-                git("branch", "-d", branch, cwd=repo_dir, check=False)  # -d, nunca -D
+                _apaga_branch_se_contida(repo_dir, branch, base)
             removidas.append(path)
     return removidas
 
@@ -91,7 +129,10 @@ def main(argv: list[str] | None = None, root: Path = ROOT) -> int:
         removidas = prune(args.root, dry_run=not args.yes)
         verbo = "Removida" if args.yes else "Seria removida"
         for p in removidas:
+            extras = [] if args.yes else ignorados(p)
             print(f"{verbo}: {p}")
+            if extras:
+                print(f"  atenção: apaga também arquivos ignorados: {', '.join(extras)}")
         if not removidas:
             print("Nada para limpar.")
         elif not args.yes:

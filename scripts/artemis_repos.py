@@ -38,7 +38,7 @@ def git(*args: str, cwd: Path, check: bool = True) -> str:
 
 def base_branch(repo_dir: Path) -> str:
     """`staging` se existir em origin; senão `main`, com aviso em stderr."""
-    if git("ls-remote", "--heads", "origin", "staging", cwd=repo_dir):
+    if git("ls-remote", "--heads", "origin", "refs/heads/staging", cwd=repo_dir):  # nome exato, sem sufixo
         return "staging"
     print(f"AVISO: {repo_dir.name} ainda não tem staging; usando main.", file=sys.stderr)
     return "main"

@@ -183,3 +183,43 @@ def test_gh_mergeada_com_outra_ponta_nao_apaga(fake_org, monkeypatch):
     monkeypatch.setattr("builtins.input", lambda _="": "s")
     branches.main(fake_org.root, delete=True)
     assert "feat/4-reuso" in _remotas(fake_org.remotes[RAG])
+
+
+def _ignora(repo_dir, padrao):
+    common = git("rev-parse", "--git-common-dir", cwd=repo_dir)
+    exclude = (repo_dir / common).resolve() / "info" / "exclude"
+    exclude.parent.mkdir(parents=True, exist_ok=True)
+    with exclude.open("a", encoding="utf-8") as f:
+        f.write(f"{padrao}\n")
+
+
+def test_prune_nao_remove_worktree_recem_criada_com_ignorados(fake_org, monkeypatch, capsys):
+    monkeypatch.setattr(shutil, "which", lambda _: None)
+    repo_dir = fake_org.root / RAG
+    p = worktree.new("rag", "feat/5-nova", fake_org.root)
+    _ignora(repo_dir, ".env")
+    (p / ".env").write_text("SEGREDO=1\n", encoding="utf-8")
+    assert worktree.prune(fake_org.root, dry_run=False) == []
+    assert worktree.main(["--root", str(fake_org.root), "prune", "--yes"]) == 0
+    assert (p / ".env").read_text(encoding="utf-8") == "SEGREDO=1\n"
+    assert git("branch", "--list", "feat/5-nova", cwd=repo_dir) != ""
+
+
+def test_prune_avisa_arquivos_ignorados_que_seriam_apagados(fake_org, monkeypatch, capsys):
+    monkeypatch.setattr(shutil, "which", lambda _: None)
+    p = worktree.new("rag", "feat/1-x", fake_org.root)
+    commit_na_worktree(p)
+    tgit("push", "-q", "origin", "HEAD:staging", cwd=p)
+    _ignora(fake_org.root / RAG, ".env")
+    (p / ".env").write_text("x\n", encoding="utf-8")
+    assert worktree.main(["--root", str(fake_org.root), "prune"]) == 0
+    out = capsys.readouterr().out
+    assert f"Seria removida: {p}" in out
+    assert "apaga também arquivos ignorados: .env" in out
+    assert p.exists()
+
+
+def test_new_nao_rastreia_a_base(fake_org):
+    p = worktree.new("rag", "feat/6-sem-upstream", fake_org.root)
+    assert git("rev-parse", "--abbrev-ref", "@{u}", cwd=p, check=False) == ""
+    assert git("config", "--get", "branch.feat/6-sem-upstream.merge", cwd=p, check=False) == ""

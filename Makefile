@@ -2,7 +2,7 @@
 PYTHON ?= $(shell command -v python3 2>/dev/null || command -v python)
 
 .DEFAULT_GOAL := help
-.PHONY: help setup sync status worktree prune branches rag-query rag-demo
+.PHONY: help setup sync status worktree prune prune-yes branches rag-query rag-demo
 
 help: ## Lista os alvos disponíveis
 	@grep -hE '^[a-zA-Z_%-]+:.*## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*## "} {printf "  %-14s %s\n", $$1, $$2}'
@@ -20,7 +20,10 @@ worktree: ## Cria worktree: make worktree REPO=rag BRANCH=feat/20-ocr
 	@test -n "$(REPO)" -a -n "$(BRANCH)" || { echo "Uso: make worktree REPO=rag BRANCH=feat/20-ocr" >&2; exit 2; }
 	$(PYTHON) scripts/worktree.py new $(REPO) $(BRANCH)
 
-prune: ## Remove worktrees limpas de branches já mergeadas
+prune: ## Mostra as worktrees que seriam removidas (ensaio, não apaga)
+	$(PYTHON) scripts/worktree.py prune
+
+prune-yes: ## Remove worktrees limpas de branches já mergeadas
 	$(PYTHON) scripts/worktree.py prune --yes
 
 branches: ## Lista branches já mergeadas nos repos

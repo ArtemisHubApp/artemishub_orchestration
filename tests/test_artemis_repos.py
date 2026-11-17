@@ -22,3 +22,11 @@ def test_base_branch_sem_staging_usa_main_e_avisa(fake_org_sem_staging, capsys):
 
 def test_worktrees_root_fica_fora_do_repo(tmp_path):
     assert worktrees_root(tmp_path / "orq") == tmp_path / "artemishub-worktrees"
+
+
+def test_base_branch_nao_casa_por_sufixo(fake_org_sem_staging):
+    from artemis_repos import git
+
+    repo_dir = fake_org_sem_staging.root / "artemishub_rag"
+    git("push", "-q", "origin", "HEAD:refs/heads/old/staging", cwd=repo_dir)
+    assert base_branch(repo_dir) == "main"
