@@ -121,7 +121,7 @@ Fonte única, em português, com no máximo cerca de 250 linhas. Seções:
    - Spec e plano ficam versionados no repo do submódulo, em `docs/superpowers/specs/` e `docs/superpowers/plans/`.
    - Teste antes do código em mudança de comportamento.
    - PR com `Closes #<n>`, revisado por outra integrante.
-   - **Docs sempre atualizadas quando algo relevante muda** (comportamento, comando, configuração, arquitetura, dependência): README/`AGENTS.md` do repo, `artemishub_docs` e ADR quando couber, no mesmo PR — PR que muda algo relevante sem tocar doc precisa dizer por quê.
+   - **Docs sempre atualizadas quando algo relevante muda** (comportamento, comando, configuração, arquitetura, dependência): README/`AGENTS.md` do repo, `artemishub_docs` (incluindo o site no GitHub Pages: PR no `docs` quando a página descrita muda) e ADR quando couber, no mesmo PR — PR que muda algo relevante sem tocar doc precisa dizer por quê.
 5. **Fluxo do kanban:** resumo e link para `artemishub_docs/docs/guias/kanban.md` (sem duplicar).
 6. **Segurança:** nunca commitar `.env`; repos públicos; nenhum dado pessoal real em fixtures (LGPD).
 7. **Lições de submódulo:**

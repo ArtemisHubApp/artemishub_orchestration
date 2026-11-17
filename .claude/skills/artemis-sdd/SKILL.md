@@ -57,7 +57,9 @@ Exemplo: `python scripts/worktree.py new rag feat/20-ocr-diretrizes`. Tipos: `fe
 
 Quando algo relevante muda (comportamento, comando, configuração, arquitetura, dependência),
 atualize **no mesmo PR**: README e `AGENTS.md` do repo, `artemishub_docs` e ADR quando couber.
-Se o PR não mexeu em doc, a descrição diz por quê.
+Inclui o **site no GitHub Pages** (gerado do `artemishub_docs`): se a mudança altera algo que
+o site descreve, abra também um PR no `artemishub_docs` atualizando a página e cite os dois PRs
+um no outro. Se o PR não mexeu em doc, a descrição diz por quê.
 
 ## 6. Checklist de PR
 

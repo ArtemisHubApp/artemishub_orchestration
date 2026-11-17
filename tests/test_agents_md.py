@@ -95,6 +95,15 @@ def test_readme_docker_sem_make_e_prune_yes():
     assert "`make prune` já usa `--yes`" not in r
 
 
+def test_regra_de_docs_inclui_github_pages():
+    for f in [
+        ROOT / "AGENTS.md",
+        ROOT / ".agents/skills/artemis-sdd/SKILL.md",
+        ROOT / ".claude/skills/artemis-sdd/SKILL.md",
+    ]:
+        assert "GitHub Pages" in f.read_text(encoding="utf-8"), f
+
+
 def test_caminho_dos_adrs_e_o_real():
     alvos = [
         ROOT / "AGENTS.md",
