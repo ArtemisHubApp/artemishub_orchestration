@@ -31,28 +31,39 @@ Abra a pasta no seu agente (Claude Code, Codex, Gemini CLI). Ele lê o `AGENTS.m
 | `python scripts/status.py` | `make status` | Mostra branch, mudanças, adiantamento e worktrees de cada repo |
 | `python scripts/worktree.py new <repo> <tipo>/<nº>-<slug>` | `make worktree REPO=<repo> BRANCH=<tipo>/<nº>-<slug>` | Cria uma worktree a partir de `origin/staging` |
 | `python scripts/worktree.py list` | - | Lista as worktrees |
-| `python scripts/worktree.py prune` | `make prune` | Remove worktrees de branches já mergeadas (sem `--yes` só mostra o que removeria; `make prune` já usa `--yes`) |
+| `python scripts/worktree.py prune` | `make prune` | Ensaio: mostra as worktrees de branches já mergeadas que seriam removidas |
+| `python scripts/worktree.py prune --yes` | `make prune-yes` | Remove essas worktrees (nunca uma sem commit próprio ou com mudanças) |
 | `python scripts/branches.py` | `make branches` | Lista branches mergeadas nos repos (`--delete` apaga, com confirmação) |
-| `python scripts/sync_skills.py` | - | Copia `artemis-sdd` entre `.agents/skills/` e `.claude/skills/` |
+| `python scripts/sync_skills.py` | - | Copia `artemis-sdd` de `.agents/skills/` (fonte) para `.claude/skills/` (cópia gerada) |
 
 ## Como trabalhar
 
 1. Toda tarefa tem uma issue no kanban.
 2. Crie a worktree: `python scripts/worktree.py new rag feat/20-ocr-diretrizes`.
-3. Trabalhe lá, com o agente seguindo o `AGENTS.md`, e abra o PR para `staging` com `Closes #<nº>`.
+3. Trabalhe lá, com o agente seguindo o `AGENTS.md` (veja abaixo como abrir o agente). No primeiro push, publique a branch com `git push -u origin <tipo>/<nº>-<slug>` e abra o PR para `staging` com `Closes #<nº>`.
 4. Depois do merge, `python scripts/worktree.py prune --yes` (sem `--yes` é um ensaio que só lista).
+
+## Como abrir o agente numa tarefa
+
+A worktree fica fora do orquestrador, em `../artemishub-worktrees/<repo>/<branch>/`. Abra o agente na raiz do orquestrador (assim ele lê o `AGENTS.md` e as skills) e dê acesso à pasta da worktree:
+
+- Claude Code: `claude --add-dir <caminho>` ou `/add-dir <caminho>` dentro da sessão.
+- Gemini CLI: `gemini --include-directories <caminho>`.
+- Codex CLI: `codex --add-dir <caminho>`.
+
+As opções mudam entre versões: confira a opção na documentação da sua versão.
 
 ## Docker (opcional)
 
 Sem Python, uv nem torch na máquina: só o Docker. `docker compose run --rm rag` e `docker compose run --rm agents` usam a pasta do submódulo como volume. `backend` e `frontend` ficam no profile `app` até terem scaffold.
 
-| Atalho | O que faz |
-|---|---|
-| `make rag-query Q="pergunta"` | Consulta o RAG |
-| `make rag-demo` | Roda a demo do RAG |
-| `make test-rag` / `make test-agents` | Roda os testes do serviço |
-| `make shell-rag` / `make shell-agents` | Abre um shell no serviço |
-| `make help` | Lista todos os atalhos |
+| Comando (funciona em qualquer sistema, inclusive Windows) | Atalho `make` | O que faz |
+|---|---|---|
+| `docker compose run --rm rag uv run python -m src.query "pergunta"` | `make rag-query Q="pergunta"` | Consulta o RAG |
+| `docker compose run --rm rag uv run python -m src.demo` | `make rag-demo` | Roda a demo do RAG |
+| `docker compose run --rm rag uv run pytest -q` (ou `agents`) | `make test-rag` / `make test-agents` | Roda os testes do serviço |
+| `docker compose run --rm rag sh` (ou `agents`) | `make shell-rag` / `make shell-agents` | Abre um shell no serviço |
+| - | `make help` | Lista todos os atalhos |
 
 As regras completas estão no [AGENTS.md](AGENTS.md).
 

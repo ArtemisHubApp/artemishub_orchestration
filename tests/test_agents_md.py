@@ -52,3 +52,39 @@ def test_skills_so_no_orquestrador():
 
 def test_claude_e_gemini_importam():
     assert (ROOT / "CLAUDE.md").read_text() == (ROOT / "GEMINI.md").read_text() == "@AGENTS.md\n"
+
+
+def _readme() -> str:
+    return (ROOT / "README.md").read_text(encoding="utf-8")
+
+
+def test_como_abrir_o_agente_numa_worktree():
+    for texto in (_agents(), _readme()):
+        assert "Como abrir o agente numa tarefa" in texto
+        for trecho in ["/add-dir", "--add-dir", "--include-directories", "confira a opção na documentação da sua versão"]:
+            assert trecho in texto, trecho
+
+
+def test_primeiro_push_com_upstream_documentado():
+    comando = (ROOT / ".claude/commands/worktree.md").read_text(encoding="utf-8")
+    for texto in (_agents(), _readme(), comando):
+        assert "git push -u origin <tipo>/<nº>-<slug>" in texto
+
+
+def test_mudancas_no_orquestrador_e_ponteiros_de_submodulo():
+    t = _agents()
+    assert "Mudança no próprio orquestrador" in t and "a partir de `main`" in t
+    cuidados = t.split("## Submódulos: cuidados")[1]
+    assert "new commits" in cuidados and "git add -A" in cuidados
+
+
+def test_readme_docker_sem_make_e_prune_yes():
+    r = _readme()
+    for cmd in [
+        'docker compose run --rm rag uv run python -m src.query "',
+        "docker compose run --rm rag uv run python -m src.demo",
+        "docker compose run --rm rag uv run pytest -q",
+        "make prune-yes",
+    ]:
+        assert cmd in r, cmd
+    assert "`make prune` já usa `--yes`" not in r

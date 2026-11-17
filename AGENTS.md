@@ -22,6 +22,8 @@ Fluxo dos dados: frontend → backend → agents → rag.
 
 Quer mexer em `X`? Leia `X/AGENTS.md` (ou o `X/README.md`, se ainda não existir) antes. O PR vai para o repo do submódulo, nunca para o orquestrador (exceto regras, skills e scripts daqui). Em dúvida sobre o estado de um repo, rode `python scripts/status.py`.
 
+Mudança no próprio orquestrador (regras, skills, scripts): issue e branch `<tipo>/<nº>-<slug>` a partir de `main` neste repo, e PR para `main` (até o orquestrador ter `staging`).
+
 ## Regras de SDD
 
 Inegociáveis. Antes de qualquer tarefa, abra `.agents/skills/artemis-sdd/SKILL.md` e siga. Claude recebe o Superpowers pelo plugin; os demais agentes abrem `.agents/skills/<skill>/SKILL.md` e seguem.
@@ -49,6 +51,17 @@ python scripts/worktree.py new <repo> <tipo>/<nº>-<slug>
 - A worktree fica fora de qualquer repo, em `../artemishub-worktrees/<repo>/<branch>/`.
 - Nunca commite direto em `staging` nem em `main`.
 - Se o repo ainda não tem `staging`, o script avisa e usa `main`.
+- A branch nova não segue nenhuma remota. No primeiro push, publique com `git push -u origin <tipo>/<nº>-<slug>`; depois, `git push` e `git pull` simples funcionam.
+
+## Como abrir o agente numa tarefa
+
+Abra o agente na raiz do orquestrador (para ele ler este `AGENTS.md` e as skills) e dê acesso à pasta da worktree, `../artemishub-worktrees/<repo>/<branch>/`:
+
+- Claude Code: `claude --add-dir <caminho>` ou, já dentro da sessão, `/add-dir <caminho>`.
+- Gemini CLI: `gemini --include-directories <caminho>`.
+- Codex CLI: `codex --add-dir <caminho>`.
+
+Os nomes das opções mudam entre versões: confira a opção na documentação da sua versão. Peça ao agente para editar e rodar comandos só dentro da worktree.
 
 ## Higiene do GitHub
 
@@ -57,7 +70,7 @@ python scripts/worktree.py new <repo> <tipo>/<nº>-<slug>
 3. Merge: squash nos PRs para `staging`; a release `staging` → `main` usa merge commit, nunca squash.
 4. PR pequeno, idealmente abaixo de uns 400 linhas alteradas (sem lockfiles e dados). Abra como draft enquanto estiver em andamento.
 5. Nunca `push --force` em `staging` ou `main`, nunca commitar `.env`, dados pessoais reais ou arquivos grandes fora do DVC.
-6. Depois do merge, apague a branch e a worktree: `python scripts/worktree.py prune --yes` (sem `--yes` é só um ensaio). Faxina de branches antigas: `python scripts/branches.py`.
+6. Depois do merge, apague a branch e a worktree: `python scripts/worktree.py prune --yes` (sem `--yes` é só um ensaio; worktree sem commit próprio nunca é removida). Faxina de branches antigas: `python scripts/branches.py`.
 
 ## Código limpo
 
@@ -85,7 +98,8 @@ Toda issue, de qualquer repo, entra no mesmo GitHub Project: Backlog → Todo �
 ## Submódulos: cuidados
 
 - O checkout local do submódulo pode estar atrasado. Para ver o estado real: `git fetch` e `git show origin/staging:<arquivo>` (ou `origin/main` para produção).
-- Atualize tudo com `python scripts/sync.py`; nunca descarte mudança local (sem `reset --hard`, `checkout -- .` nem `clean`).
+- Atualize tudo com `python scripts/sync.py`; nunca descarte mudança local (sem `reset --hard`, `checkout -- .` nem `clean`). O sync pula repo sujo, em outra branch ou com commit só local.
+- Depois do sync, o `git status` do orquestrador mostra os submódulos com "new commits". É normal: não commite esses ponteiros sem querer (evite `git add -A` e `git commit -a` aqui; adicione só os arquivos que você mudou).
 - Não crie worktree dentro de um repo; use sempre `scripts/worktree.py`.
 - Sem caminhos absolutos e sem links simbólicos (a equipe usa Windows).
 - Primeiro uso: `git clone --recurse-submodules https://github.com/ArtemisHubApp/artemishub_orchestration.git` e `python scripts/setup.py`.

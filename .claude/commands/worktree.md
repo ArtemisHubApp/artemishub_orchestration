@@ -14,6 +14,9 @@ Monte o nome da branch como `<tipo>/<nº>-<slug>`:
 
 Confirme o nome com a pessoa e então rode `python scripts/worktree.py new <repo> <tipo>/<nº>-<slug>` (use `python3` se `python` não existir). Mostre o caminho da worktree criada.
 
+Explique como abrir o agente nessa worktree: na raiz do orquestrador, dando acesso à pasta (Claude Code: `/add-dir <caminho>`).
+
 Por fim, lembre as regras:
+- a branch nasce sem upstream: no primeiro push, use `git push -u origin <tipo>/<nº>-<slug>`;
 - o commit ou a descrição do PR deve conter `Closes #<nº>` para fechar a issue;
 - o PR deve ser aberto para a branch `staging`, nunca direto para a `main`.
