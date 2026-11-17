@@ -1,0 +1,20 @@
+[submodule "artemishub_docs"]
+	path = artemishub_docs
+	url = https://github.com/ArtemisHubApp/artemishub_docs.git
+	branch = staging
+[submodule "artemishub_frontend"]
+	path = artemishub_frontend
+	url = https://github.com/ArtemisHubApp/artemishub_frontend.git
+	branch = staging
+[submodule "artemishub_backend"]
+	path = artemishub_backend
+	url = https://github.com/ArtemisHubApp/artemishub_backend.git
+	branch = staging
+[submodule "artemishub_agents"]
+	path = artemishub_agents
+	url = https://github.com/ArtemisHubApp/artemishub_agents.git
+	branch = staging
+[submodule "artemishub_rag"]
+	path = artemishub_rag
+	url = https://github.com/ArtemisHubApp/artemishub_rag.git
+	branch = staging
