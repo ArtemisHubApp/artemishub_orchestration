@@ -208,7 +208,7 @@ Hoje nenhum repo tem um servidor de pé. O `rag` é uma CLI com Chroma embutido 
 - **Molde do Kyte:** imagem base genérica (`ghcr.io/astral-sh/uv:python3.12-bookworm-slim`) e a pasta do submódulo montada como volume (`./artemishub_rag:/app`), sem build de Dockerfile. Editar o código no host vale na hora.
 - **Volumes nomeados** para `/app/.venv`, para o cache de modelos do Hugging Face e para o índice do Chroma. Assim o `uv sync` e o download do modelo de embeddings só acontecem uma vez.
 - **Serviços:**
-  - `rag`: no início roda `uv sync --locked` e lê `artemishub_rag/.env`. É usado com `docker compose run --rm rag python -m src.query "pergunta"`, `... src.demo` e `... pytest`.
+  - `rag`: no início roda `uv sync --locked` e lê `artemishub_rag/.env`. É usado com `docker compose run --rm rag uv run python -m src.query "pergunta"`, `... uv run python -m src.demo` e `... uv run pytest`.
   - `agents`: mesmo molde, para os scripts e testes.
   - `backend` e `frontend`: ficam no arquivo como blocos atrás de `profiles: [app]`, desligados até existir scaffold. Ligar é só adicionar `--profile app`.
 - **Atalhos** em `scripts/` e `Makefile`: `rag-query`, `rag-demo`, `test-<serviço>` e `shell-<serviço>`. Também viram o comando `/start`, que confere se o Docker está instalado e explica cada passo.
@@ -221,14 +221,14 @@ Os READMEs dos repos já prometem "decisões registradas como ADR no `artemishub
 
 - **Pasta (corrigido em 17/11, Plano 2):** o `artemishub_docs` já tinha a seção `docs/adr/` (ADR-001 reservado para a stack, ADR-002 LangGraph). Os ADRs do orquestrador seguem essa convenção: `docs/adr/NNN-titulo.md`, 3 dígitos, **003 a 010**, no formato do ADR-002. ~~`docs/arquitetura/decisoes/` com `0001`–`0008`~~ (proposta original). A seção entra no `nav` do `mkdocs.yml`, e o build `--strict` precisa passar.
 - **ADRs iniciais**, nascidos deste design:
-  - 0001: repo orquestrador com submódulos (abordagens A/B/C);
-  - 0002: `AGENTS.md` como fonte única, para uma equipe que usa vários agentes;
-  - 0003: SDD com Superpowers + `artemis-sdd` (plugin no Claude, cópia para os demais);
-  - 0004: uv + `uv.lock` como padrão e workflows de CI reutilizáveis;
-  - 0005: compose como ambiente de desenvolvimento antes do app existir;
-  - 0006: fluxo `staging → main` com worktrees;
-  - 0007: higiene do GitHub e repo `.github` da org;
-  - 0008: código limpo e clean architecture (hexagonal) com checagem no CI.
+  - ADR-003: repo orquestrador com submódulos (abordagens A/B/C);
+  - ADR-004: `AGENTS.md` como fonte única, para uma equipe que usa vários agentes;
+  - ADR-005: SDD com Superpowers + `artemis-sdd` (plugin no Claude, cópia para os demais);
+  - ADR-006: uv + `uv.lock` como padrão e workflows de CI reutilizáveis;
+  - ADR-007: compose como ambiente de desenvolvimento antes do app existir;
+  - ADR-008: fluxo `staging → main` com worktrees;
+  - ADR-009: higiene do GitHub e repo `.github` da org;
+  - ADR-010: código limpo e clean architecture (hexagonal) com checagem no CI.
 - **Regra no `AGENTS.md`:** toda decisão que muda arquitetura, stack ou processo gera um ADR no `artemishub_docs`, no mesmo ciclo. O agente propõe o rascunho e a equipe aprova no PR. A skill `artemis-sdd` lembra disso na etapa de spec.
 - O orquestrador **não** guarda ADRs próprios: só aponta para a pasta do `docs`.
 
@@ -312,7 +312,7 @@ origin/staging ──► worktree + branch feat/<issue>-<slug> ──► PR → 
 - Templates de issue e PR aparecem em todos os repos pelo `ArtemisHubApp/.github`, e nenhuma branch mergeada fica aberta.
 - O CI do `rag` roda `import-linter` com o contrato de camadas, e a única exceção registrada aponta para uma issue.
 - Existe uma única cópia das regras de SDD na org: `rag` e `agents` sem pasta de skills, e o passo `no-local-skills` do CI ativo nos dois.
-- No Windows, só com Docker Desktop e git, `docker compose run --rm rag python -m src.query "..."` responde.
+- No Windows, só com Docker Desktop e git, `docker compose run --rm rag uv run python -m src.query "..."` responde.
 - `python scripts/worktree.py new rag feat/1-teste` cria a worktree em `../artemishub-worktrees/` a partir de `origin/staging`, e um PR aberto dali vai para `staging` por padrão.
 - Os ADRs 003 a 010 aparecem no site do `artemishub_docs` (`docs/adr/`).
 - `rag` e `agents` usam o workflow reutilizável, com CI verde, `uv lock --check` passando e um só arquivo de dependências travadas (`uv.lock`).

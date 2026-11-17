@@ -66,7 +66,7 @@ Os nomes das opções mudam entre versões: confira a opção na documentação 
 ## Higiene do GitHub
 
 1. Uma issue, uma branch, um PR. Renomeie branches de nome automático (`claude/...`, `codex/...`) antes de abrir o PR.
-2. Commits e título de PR em Conventional Commits (`feat:`, `fix:`, `chore:`, `docs:`, `refactor:`, `test:`, `ci:`), em português depois dos dois-pontos.
+2. Commits e título de PR em Conventional Commits (`feat:`, `fix:`, `chore:`, `docs:`, `refactor:`, `test:`, `ci:`; `release:` só no PR `staging → main`), em português depois dos dois-pontos.
 3. Merge: squash nos PRs para `staging`; a release `staging` → `main` usa merge commit, nunca squash.
 4. PR pequeno, idealmente abaixo de uns 400 linhas alteradas (sem lockfiles e dados). Abra como draft enquanto estiver em andamento.
 5. Nunca `push --force` em `staging` ou `main`, nunca commitar `.env`, dados pessoais reais ou arquivos grandes fora do DVC.
