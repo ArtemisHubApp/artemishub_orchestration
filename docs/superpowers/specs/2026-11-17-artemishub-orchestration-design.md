@@ -21,7 +21,7 @@ O Grupo 11 (Camila, Amanda, Ana Julia, Eduarda) desenvolve o Artemis em 5 reposi
 - Ao tocar um arquivo de um submódulo, o agente é lembrado de ler o contexto daquele submódulo.
 
 **Não-metas (por enquanto)**
-- `docker-compose`, Supabase ou banco local. Hoje só o RAG roda. O compose entra na semana 6, quando backend e frontend tiverem stack (seção 9).
+- Subir o app inteiro (front + back + agentes) com um comando. O compose entra **agora**, mas só com o que já existe (6.8). Backend e frontend entram quando tiverem o primeiro scaffold.
 - Pipeline de RAG do ecossistema (o `/scout` do Kyte), agentes consultivos e templates de issue por tipo.
 - Mover código entre repos. O orquestrador não tem código de aplicação.
 
@@ -56,6 +56,8 @@ O Grupo 11 (Camila, Amanda, Ana Julia, Eduarda) desenvolve o Artemis em 5 reposi
 - A equipe usa Windows: sem links simbólicos e com scripts multiplataforma.
 - PR para limpar as cópias de skills do `artemishub_rag` depois que o orquestrador estiver no ar.
 - O escopo inclui CI/CD e lockfiles (`uv.lock`) bem resolvidos dentro dos repos dos submódulos (seção 6.7).
+- O `docker-compose.yml` é adiantado para agora, com o que já existe (6.8).
+- ADRs no `artemishub_docs` são importantes e entram no escopo (6.9).
 - Esteira de SDD: Superpowers mais a skill `artemis-sdd`. A `orchestrator` do RAG, que aponta para etapas inexistentes, não vem para o orquestrador.
 
 ## 6. Design
@@ -95,6 +97,8 @@ artemishub_orchestration/
 │   ├── gitleaks.yml            # vazamento de segredo
 │   ├── validate-skills.yml     # frontmatter das skills válido
 │   └── skills-in-sync.yml      # falha se as duas cópias de artemis-sdd divergirem
+├── docker-compose.yml          # rag + agents agora; backend/frontend em profile "app" (6.8)
+├── .env.example                # só variáveis do orquestrador
 ├── .gitattributes              # * text=auto eol=lf (evita CRLF do Windows em .md/.py)
 └── .gitignore                  # .env* (menos .env.example), worktrees, .DS_Store
 ```
@@ -188,6 +192,34 @@ Todos os scripts são Python 3, só com a biblioteca padrão, e rodam igual em W
 9. **`backend` e `frontend`:** o `ci.yml` entra junto com o primeiro scaffold de cada um. Se o frontend for Node, ganha um `node-ci.yml` reutilizável no mesmo molde (lockfile commitado, `npm ci`, lint e testes).
 10. Tudo isso entra como **PRs nos repos filhos**, um por repo, depois do orquestrador. Cada PR tem issue própria no kanban.
 
+### 6.8 `docker-compose.yml` adiantado (pedido da Amanda)
+
+Hoje nenhum repo tem um servidor de pé. O `rag` é uma CLI com Chroma embutido (`PersistentClient`, gravado em disco), e o `agents` são scripts de dados. Por isso, nesta fase o compose é um **ambiente de desenvolvimento pronto**, não o app rodando. O ganho é real para quem está no Windows: ninguém precisa instalar Python, uv nem torch na máquina, só o Docker Desktop.
+
+- **Molde do Kyte:** imagem base genérica (`ghcr.io/astral-sh/uv:python3.12-bookworm-slim`) e a pasta do submódulo montada como volume (`./artemishub_rag:/app`), sem build de Dockerfile. Editar o código no host vale na hora.
+- **Volumes nomeados** para `/app/.venv`, para o cache de modelos do Hugging Face e para o índice do Chroma. Assim o `uv sync` e o download do modelo de embeddings só acontecem uma vez.
+- **Serviços:**
+  - `rag`: no início roda `uv sync --locked` e lê `artemishub_rag/.env`. É usado com `docker compose run --rm rag python -m src.query "pergunta"`, `... src.demo` e `... pytest`.
+  - `agents`: mesmo molde, para os scripts e testes.
+  - `backend` e `frontend`: ficam no arquivo como blocos atrás de `profiles: [app]`, desligados até existir scaffold. Ligar é só adicionar `--profile app`.
+- **Atalhos** em `scripts/` e `Makefile`: `rag-query`, `rag-demo`, `test-<serviço>` e `shell-<serviço>`. Também viram o comando `/start`, que confere se o Docker está instalado e explica cada passo.
+- **Quando o `rag` virar um serviço HTTP** (o `agents` vai consultar o RAG na semana 4 ou 5), o serviço `rag` ganha `command` de servidor e porta, e os `agents` passam a falar com `http://rag:<porta>`. A estrutura não muda.
+- `.env.example` na raiz, só com o que for do orquestrador (por exemplo, portas). Cada submódulo continua com o próprio `.env`.
+
+### 6.9 ADRs no `artemishub_docs` (pedido da Amanda)
+
+Os READMEs dos repos já prometem "decisões registradas como ADR no `artemishub_docs`", mas a pasta ainda não existe.
+
+- **Pasta:** `artemishub_docs/docs/arquitetura/decisoes/`, com `index.md` (tabela de ADRs) e arquivos `NNNN-titulo.md` no formato MADR curto: contexto, decisão, alternativas, consequências e status. A seção entra no `nav` do `mkdocs.yml`, e o build `--strict` precisa passar.
+- **ADRs iniciais**, nascidos deste design:
+  - 0001: repo orquestrador com submódulos (abordagens A/B/C);
+  - 0002: `AGENTS.md` como fonte única, para uma equipe que usa vários agentes;
+  - 0003: SDD com Superpowers + `artemis-sdd` (plugin no Claude, cópia para os demais);
+  - 0004: uv + `uv.lock` como padrão e workflows de CI reutilizáveis;
+  - 0005: compose como ambiente de desenvolvimento antes do app existir.
+- **Regra no `AGENTS.md`:** toda decisão que muda arquitetura, stack ou processo gera um ADR no `artemishub_docs`, no mesmo ciclo. O agente propõe o rascunho e a equipe aprova no PR. A skill `artemis-sdd` lembra disso na etapa de spec.
+- O orquestrador **não** guarda ADRs próprios: só aponta para a pasta do `docs`.
+
 ## 7. Deixado para quem constrói
 
 - O texto exato do `AGENTS.md` e da skill `artemis-sdd`, seguindo 6.2 e 6.3.
@@ -201,9 +233,10 @@ Todos os scripts são Python 3, só com a biblioteca padrão, e rodam igual em W
 - Editar um arquivo em `artemishub_rag/` dispara o aviso do hook uma vez.
 - Pedir "implementa X" leva o agente a criar ou pedir a issue e seguir a esteira de SDD na profundidade certa.
 - Existe uma única cópia das regras de SDD na org.
+- No Windows, só com Docker Desktop e git, `docker compose run --rm rag python -m src.query "..."` responde.
+- Os ADRs 0001 a 0005 aparecem no site do `artemishub_docs`.
 - `rag` e `agents` usam o workflow reutilizável, com CI verde, `uv lock --check` passando e um só arquivo de dependências travadas (`uv.lock`).
 
 ## 9. Futuro (fora do escopo agora)
 
-- Semana 6: `docker-compose.yml` com um serviço por submódulo (pasta montada como volume), `make start/stop/logs-%` e um `.env.example` na raiz.
-- ADRs do orquestrador no `artemishub_docs`.
+- Semana 6: ligar `backend` e `frontend` no compose, `make start/stop/logs-%` e escolher o destino de deploy (CD do app).
