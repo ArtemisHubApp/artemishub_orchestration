@@ -18,4 +18,4 @@ jobs:
           fetch-depth: 0
       - name: gitleaks (CLI oficial via container, sem licença)
         # `git` é o subcomando atual do gitleaks v8; `detect` está obsoleto.
-        run: docker run --rm -v "$PWD:/repo" ghcr.io/gitleaks/gitleaks:latest git /repo --redact --verbose
+        run: docker run --rm -v "$PWD:/repo" ghcr.io/gitleaks/gitleaks:v8.24.3 git /repo --redact --verbose

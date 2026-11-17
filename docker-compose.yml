@@ -7,8 +7,7 @@ x-uv-service: &uv-service
     UV_LOCKED: "1"
     UV_LINK_MODE: copy
     HF_HOME: /cache/hf
-  volumes:
-    - hf-cache:/cache/hf
+  # volumes: cada serviço declara a lista inteira (o merge `<<` substitui listas, não soma).
 
 services:
   rag:

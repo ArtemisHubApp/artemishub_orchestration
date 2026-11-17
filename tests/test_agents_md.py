@@ -61,7 +61,12 @@ def _readme() -> str:
 def test_como_abrir_o_agente_numa_worktree():
     for texto in (_agents(), _readme()):
         assert "Como abrir o agente numa tarefa" in texto
-        for trecho in ["/add-dir", "--add-dir", "--include-directories", "confira a opção na documentação da sua versão"]:
+        for trecho in [
+            "/add-dir",
+            "--add-dir",
+            "--include-directories",
+            "confira a opção na documentação da sua versão",
+        ]:
             assert trecho in texto, trecho
 
 

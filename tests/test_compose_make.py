@@ -34,6 +34,14 @@ def test_compose_sem_profile_so_sobe_rag_e_agents():
     assert set(cfg["services"]) == {"rag", "agents"}
 
 
+def test_anchor_do_compose_sem_volumes_mortos():
+    yaml = pytest.importorskip("yaml")
+    cfg = yaml.safe_load((ROOT / "docker-compose.yml").read_text(encoding="utf-8"))
+    assert "volumes" not in cfg["x-uv-service"]  # cada serviço declara os seus (o merge `<<` não soma listas)
+    for servico in ("rag", "agents"):
+        assert "hf-cache:/cache/hf" in cfg["services"][servico]["volumes"]
+
+
 @precisa_make
 def test_make_help_lista_alvos():
     out = subprocess.run(["make", "help"], cwd=ROOT, capture_output=True, check=False, text=True).stdout

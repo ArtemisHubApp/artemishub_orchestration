@@ -53,6 +53,7 @@ def test_no_local_skills_cobre_as_4_formas():
     run = load("python-ci.yml")["jobs"]["no-local-skills"]["steps"][-1]["run"]
     assert all(p in run for p in [".claude/skills", ".agents/skills", "agent/skills", "skills-lock.json"])
     assert "::error::skills ficam no artemishub_orchestration" in run
+    assert '[ -e "$p" ] || [ -L "$p" ]' in run  # link simbólico quebrado também conta
 
 
 def test_test_usa_matriz_de_inputs():
@@ -76,6 +77,15 @@ def test_gitleaks_historico_completo():
         assert not any("gitleaks-action" in u for u in usos(job)), nome
         checkout = next(s for s in job["steps"] if s["uses"].startswith("actions/checkout"))
         assert checkout["with"]["fetch-depth"] == 0
+
+
+def test_imagem_do_gitleaks_fixada():
+    import re
+
+    for nome in ["python-ci.yml", "gitleaks.yml"]:
+        texto = runs(load(nome)["jobs"]["gitleaks"])
+        assert re.search(r"ghcr\.io/gitleaks/gitleaks:v8\.\d+\.\d+ ", texto), nome
+        assert "gitleaks:latest" not in texto, nome
 
 
 def test_todos_os_jobs_com_permissao_minima():

@@ -45,7 +45,7 @@ jobs:
         run: |
           found=0
           for p in .claude/skills .agents/skills agent/skills skills-lock.json; do
-            if [ -e "$p" ]; then
+            if [ -e "$p" ] || [ -L "$p" ]; then
               echo "::error::skills ficam no artemishub_orchestration (encontrado: $p)"
               found=1
             fi
@@ -121,4 +121,4 @@ jobs:
           fetch-depth: 0
       - name: gitleaks (CLI oficial via container, sem licença)
         # `git` é o subcomando atual do gitleaks v8; `detect` está obsoleto.
-        run: docker run --rm -v "$PWD:/repo" ghcr.io/gitleaks/gitleaks:latest git /repo --redact --verbose
+        run: docker run --rm -v "$PWD:/repo" ghcr.io/gitleaks/gitleaks:v8.24.3 git /repo --redact --verbose
