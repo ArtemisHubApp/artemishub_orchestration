@@ -59,6 +59,8 @@ O Grupo 11 (Camila, Amanda, Ana Julia, Eduarda) desenvolve o Artemis em 5 reposi
 - O `docker-compose.yml` é adiantado para agora, com o que já existe (6.8).
 - ADRs no `artemishub_docs` são importantes e entram no escopo (6.9).
 - Regra de branches: worktree + branch a partir da `staging`, e só depois `staging → main` (produção) (6.10).
+- Regras de higiene do GitHub são importantes (6.11).
+- Regras de código limpo e clean architecture (6.12).
 - Esteira de SDD: Superpowers mais a skill `artemis-sdd`. A `orchestrator` do RAG, que aponta para etapas inexistentes, não vem para o orquestrador.
 
 ## 6. Design
@@ -223,7 +225,9 @@ Os READMEs dos repos já prometem "decisões registradas como ADR no `artemishub
   - 0003: SDD com Superpowers + `artemis-sdd` (plugin no Claude, cópia para os demais);
   - 0004: uv + `uv.lock` como padrão e workflows de CI reutilizáveis;
   - 0005: compose como ambiente de desenvolvimento antes do app existir;
-  - 0006: fluxo `staging → main` com worktrees.
+  - 0006: fluxo `staging → main` com worktrees;
+  - 0007: higiene do GitHub e repo `.github` da org;
+  - 0008: código limpo e clean architecture (hexagonal) com checagem no CI.
 - **Regra no `AGENTS.md`:** toda decisão que muda arquitetura, stack ou processo gera um ADR no `artemishub_docs`, no mesmo ciclo. O agente propõe o rascunho e a equipe aprova no PR. A skill `artemis-sdd` lembra disso na etapa de spec.
 - O orquestrador **não** guarda ADRs próprios: só aponta para a pasta do `docs`.
 
@@ -247,6 +251,51 @@ origin/staging ──► worktree + branch feat/<issue>-<slug> ──► PR → 
 - **O orquestrador em si** é pequeno e muda pouco. Ele também usa `staging → main`, por consistência.
 - **Criar a `staging`, trocar a branch padrão e configurar as proteções** exige acesso de admin na org. Fica numa issue para quem tem esse acesso.
 
+### 6.11 Higiene do GitHub (pedido da Amanda)
+
+**Situação em 2026-11-17:** nenhum repo tem template de issue ou de PR, nem CODEOWNERS. As branches não são apagadas depois do merge: 19 branches já mergeadas continuam abertas (9 no `rag`, 5 no `agents`, 5 no `docs`). Uma delas tem nome gerado por agente (`claude/optimistic-meitner-8yac2i`).
+
+**Regras (no `AGENTS.md`, valem para pessoas e agentes):**
+
+1. **Uma issue, uma branch, um PR.** A branch segue `<tipo>/<nº issue>-<slug>` (6.10). O agente **renomeia** branches com nome automático (`claude/…`, `codex/…`) antes de abrir o PR.
+2. **Commits e título de PR no padrão Conventional Commits** (`feat:`, `fix:`, `chore:`, `docs:`, `refactor:`, `test:`, `ci:`), em português depois dos dois-pontos. O CI reutilizável checa o título do PR.
+3. **Merge:** *squash* nos PRs para `staging`, e o título do PR vira o commit. A release `staging → main` usa *merge commit*, nunca squash, para as duas branches não divergirem.
+4. **PR pequeno:** idealmente menos de cerca de 400 linhas alteradas, sem contar lockfiles e dados. Abra como *draft* enquanto estiver em andamento.
+5. **Nunca** dar `push --force` em `staging` ou `main`, commitar `.env`, dados pessoais reais ou arquivos grandes fora do DVC.
+6. **Depois do merge:** a branch é apagada (configuração "Automatically delete head branches" em cada repo) e a worktree também, com `scripts/worktree.py prune`, que remove as worktrees cujas branches já foram mergeadas.
+
+**Onde mora (minha decisão):** os templates ficam num repo `ArtemisHubApp/.github`. É o jeito nativo do GitHub de valer para todos os repos da org de uma vez, sem copiar arquivo em cada repo, o que seria a mesma armadilha das skills. Ele traz:
+- **Templates de issue** (formulários): feature, bug, tarefa/chore e documentação, com os campos *Semana*, *Critérios de aceite* e *Repo afetado*.
+- **Template de PR:** `Closes #`, o que muda, como testar e um checklist (spec/plano linkado, testes, docs atualizadas, ADR se mudou arquitetura, regras de código limpo de 6.12).
+- **Labels padrão** (`semana-N`, `prioridade: alta|média|baixa`, `tipo: …`), sincronizadas nos repos por `scripts/labels.py` com o `gh` (precisa de permissão de *maintain*).
+- **CODEOWNERS** por repo, com as donas de cada frente, para pedir revisão automaticamente. A **equipe preenche quem é dona de quê.**
+
+**Faxina inicial:** `scripts/branches.py` lista as branches mergeadas em cada repo e apaga só depois de confirmação.
+
+### 6.12 Código limpo e clean architecture (pedido da Amanda)
+
+**Situação:** o `rag` já começou a migrar para camadas (`src/domain`, `src/application/{use_cases,ports}`, `src/adapters/outbound`). Mas `application/use_cases/pipeline_use_cases.py` importa `src.index` e `src.ingest` direto, sem passar pelas *ports*, o que já é uma violação da regra de dependência. Os módulos antigos e planos (`src/ingest.py`, `src/query.py`…) convivem com as camadas novas. A `orchestrator` traz um bom `coding-principles.md` (pensar antes, simplicidade, mudança cirúrgica, guiado por objetivo; adaptado de andrej-karpathy-skills, MIT).
+
+**Regras: um documento só, e checagem automática onde der.**
+
+1. **Fonte única:** `.agents/skills/artemis-sdd/references/codigo-limpo.md`, linkado no `AGENTS.md`, com:
+   - **Os 4 princípios** do `coding-principles.md`, mantendo a atribuição.
+   - **Código limpo:** nomes que dizem a intenção; funções curtas e com uma responsabilidade; sem números ou strings mágicos (vão para `config/`); type hints em toda função pública; erros explícitos (nada de `except: pass`); sem código morto nem comentado; comentário explica o *porquê*, não o *quê*; testes legíveis no formato *arrange, act, assert*.
+   - **Clean architecture (hexagonal), padrão para `rag`, `agents` e `backend`:**
+     ```
+     adapters (inbound: CLI/HTTP · outbound: Chroma, LLM, arquivos)
+          └──► application (use_cases + ports = interfaces)
+                    └──► domain (entidades e regras puras, sem libs externas)
+     ```
+     As dependências só apontam para dentro. O domínio não importa nada de I/O. Os use cases só conhecem as *ports*. A montagem (injeção de dependência) acontece num único ponto de entrada (`main`/`cli`).
+   - **Migração gradual:** módulo antigo só migra para as camadas quando uma tarefa já precisa mexer nele (princípio da mudança cirúrgica). Nada de refatoração geral.
+2. **Checagem no CI reutilizável (6.7):**
+   - **ruff com regras ampliadas:** `B` (bugs comuns), `SIM`, `N` (nomes), `C90` (complexidade ≤ 10), `PL` (subset) e `ANN` em funções públicas. Bloqueia.
+   - **import-linter**, com contrato de camadas (`adapters → application → domain`) declarado no `pyproject.toml` de cada repo. Bloqueia. As violações que já existem (o `pipeline_use_cases` do `rag`) entram numa lista de exceções com a issue que vai removê-las, para não travar o CI no primeiro dia.
+   - **Checagem de tipos** (`pyright` em modo *basic*): só avisa no início e passa a bloquear quando o repo estiver limpo.
+3. **Na revisão:** o checklist do template de PR (6.11) e a etapa de review do Superpowers usam o `codigo-limpo.md` como critério.
+4. **Frontend:** quando tiver stack, ganha o equivalente (ESLint + regra de fronteiras entre camadas) no `node-ci.yml`.
+
 ## 7. Deixado para quem constrói
 
 - O texto exato do `AGENTS.md` e da skill `artemis-sdd`, seguindo 6.2 e 6.3.
@@ -259,10 +308,12 @@ origin/staging ──► worktree + branch feat/<issue>-<slug> ──► PR → 
 - Numa sessão nova aberta na raiz, no Claude Code, no Codex e no Gemini CLI, a pergunta "o que é o artemishub_agents e como eu rodo o RAG?" é respondida certo sem colar contexto.
 - Editar um arquivo em `artemishub_rag/` dispara o aviso do hook uma vez.
 - Pedir "implementa X" leva o agente a criar ou pedir a issue e seguir a esteira de SDD na profundidade certa.
+- Templates de issue e PR aparecem em todos os repos pelo `ArtemisHubApp/.github`, e nenhuma branch mergeada fica aberta.
+- O CI do `rag` roda `import-linter` com o contrato de camadas, e a única exceção registrada aponta para uma issue.
 - Existe uma única cópia das regras de SDD na org: `rag` e `agents` sem pasta de skills, e o passo `no-local-skills` do CI ativo nos dois.
 - No Windows, só com Docker Desktop e git, `docker compose run --rm rag python -m src.query "..."` responde.
 - `python scripts/worktree.py new rag feat/1-teste` cria a worktree em `../artemishub-worktrees/` a partir de `origin/staging`, e um PR aberto dali vai para `staging` por padrão.
-- Os ADRs 0001 a 0006 aparecem no site do `artemishub_docs`.
+- Os ADRs 0001 a 0008 aparecem no site do `artemishub_docs`.
 - `rag` e `agents` usam o workflow reutilizável, com CI verde, `uv lock --check` passando e um só arquivo de dependências travadas (`uv.lock`).
 
 ## 9. Futuro (fora do escopo agora)
