@@ -1,6 +1,6 @@
 # Design: `artemishub_orchestration`
 
-**Data:** 2026-11-17 · **Autora:** Amanda (com Claude) · **Status:** rascunho para aprovação
+**Data:** 2026-11-17 · **Autora:** Amanda (com Claude) · **Status:** aprovado por Amanda em 2026-11-17
 
 ## 1. Intenção e porquê
 
