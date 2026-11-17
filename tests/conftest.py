@@ -92,3 +92,13 @@ def fake_org(tmp_path: Path) -> FakeOrg:
 @pytest.fixture
 def fake_org_sem_staging(tmp_path: Path) -> FakeOrg:
     return _criar_org(tmp_path, com_staging=False)
+
+
+@pytest.fixture(autouse=True)
+def _git_isolado(monkeypatch):
+    """Os scripts rodam git de verdade: libera file:// (remotos falsos) e ignora a config da pessoa."""
+    monkeypatch.setenv("GIT_CONFIG_GLOBAL", os.devnull)
+    monkeypatch.setenv("GIT_CONFIG_SYSTEM", os.devnull)
+    monkeypatch.setenv("GIT_CONFIG_COUNT", "1")
+    monkeypatch.setenv("GIT_CONFIG_KEY_0", "protocol.file.allow")
+    monkeypatch.setenv("GIT_CONFIG_VALUE_0", "always")

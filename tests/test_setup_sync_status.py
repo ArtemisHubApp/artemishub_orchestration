@@ -1,22 +1,8 @@
-import os
-
-import pytest
-
 import setup
 import status
 import sync
 from conftest import REPOS
 from artemis_repos import git
-
-
-@pytest.fixture(autouse=True)
-def _git_isolado(monkeypatch):
-    """Os scripts rodam git de verdade: libera file:// (remotos falsos) e ignora a config da pessoa."""
-    monkeypatch.setenv("GIT_CONFIG_GLOBAL", os.devnull)
-    monkeypatch.setenv("GIT_CONFIG_SYSTEM", os.devnull)
-    monkeypatch.setenv("GIT_CONFIG_COUNT", "1")
-    monkeypatch.setenv("GIT_CONFIG_KEY_0", "protocol.file.allow")
-    monkeypatch.setenv("GIT_CONFIG_VALUE_0", "always")
 
 
 def detach_all(org):
