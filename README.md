@@ -24,23 +24,35 @@ Abra a pasta no seu agente (Claude Code, Codex, Gemini CLI). Ele lê o `AGENTS.m
 
 ## Comandos
 
-| Comando | Para que serve |
-|---|---|
-| `python scripts/setup.py` | Baixa os submódulos e deixa cada um na branch base |
-| `python scripts/sync.py` | Atualiza os submódulos sem descartar mudanças locais |
-| `python scripts/status.py` | Mostra branch, mudanças, adiantamento e worktrees de cada repo |
-| `python scripts/worktree.py new <repo> <tipo>/<nº>-<slug>` | Cria uma worktree a partir de `origin/staging` |
-| `python scripts/worktree.py list` | Lista as worktrees |
-| `python scripts/worktree.py prune` | Remove worktrees de branches já mergeadas (`--yes` para confirmar) |
-| `python scripts/branches.py` | Lista branches mergeadas nos repos (`--delete` apaga, com confirmação) |
-| `python scripts/sync_skills.py` | Copia `artemis-sdd` entre `.agents/skills/` e `.claude/skills/` |
+| Comando | Atalho `make` | Para que serve |
+|---|---|---|
+| `python scripts/setup.py` | `make setup` | Baixa os submódulos e deixa cada um na branch base |
+| `python scripts/sync.py` | `make sync` | Atualiza os submódulos sem descartar mudanças locais |
+| `python scripts/status.py` | `make status` | Mostra branch, mudanças, adiantamento e worktrees de cada repo |
+| `python scripts/worktree.py new <repo> <tipo>/<nº>-<slug>` | `make worktree REPO=<repo> BRANCH=<tipo>/<nº>-<slug>` | Cria uma worktree a partir de `origin/staging` |
+| `python scripts/worktree.py list` | - | Lista as worktrees |
+| `python scripts/worktree.py prune` | `make prune` | Remove worktrees de branches já mergeadas (sem `--yes` só mostra o que removeria; `make prune` já usa `--yes`) |
+| `python scripts/branches.py` | `make branches` | Lista branches mergeadas nos repos (`--delete` apaga, com confirmação) |
+| `python scripts/sync_skills.py` | - | Copia `artemis-sdd` entre `.agents/skills/` e `.claude/skills/` |
 
 ## Como trabalhar
 
 1. Toda tarefa tem uma issue no kanban.
 2. Crie a worktree: `python scripts/worktree.py new rag feat/20-ocr-diretrizes`.
 3. Trabalhe lá, com o agente seguindo o `AGENTS.md`, e abra o PR para `staging` com `Closes #<nº>`.
-4. Depois do merge, `python scripts/worktree.py prune`.
+4. Depois do merge, `python scripts/worktree.py prune --yes` (sem `--yes` é um ensaio que só lista).
+
+## Docker (opcional)
+
+Sem Python, uv nem torch na máquina: só o Docker. `docker compose run --rm rag` e `docker compose run --rm agents` usam a pasta do submódulo como volume. `backend` e `frontend` ficam no profile `app` até terem scaffold.
+
+| Atalho | O que faz |
+|---|---|
+| `make rag-query Q="pergunta"` | Consulta o RAG |
+| `make rag-demo` | Roda a demo do RAG |
+| `make test-rag` / `make test-agents` | Roda os testes do serviço |
+| `make shell-rag` / `make shell-agents` | Abre um shell no serviço |
+| `make help` | Lista todos os atalhos |
 
 As regras completas estão no [AGENTS.md](AGENTS.md).
 

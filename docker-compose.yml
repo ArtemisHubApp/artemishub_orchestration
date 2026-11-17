@@ -1,0 +1,46 @@
+# Ambiente de desenvolvimento: sem Dockerfile, a pasta de cada submódulo é montada na imagem do uv.
+# Uso: docker compose run --rm rag   (ou `make help`). backend/frontend ficam atrás de `--profile app`.
+x-uv-service: &uv-service
+  image: ghcr.io/astral-sh/uv:python3.12-bookworm-slim
+  working_dir: /app
+  environment:
+    UV_LOCKED: "1"
+    UV_LINK_MODE: copy
+    HF_HOME: /cache/hf
+  volumes:
+    - hf-cache:/cache/hf
+
+services:
+  rag:
+    <<: *uv-service
+    volumes:
+      - hf-cache:/cache/hf
+      - ./artemishub_rag:/app
+      - rag-venv:/app/.venv
+    env_file:
+      - path: ./artemishub_rag/.env
+        required: false
+    command: ["uv", "run", "python", "-m", "src.query", "--help"]
+
+  agents:
+    <<: *uv-service
+    volumes:
+      - hf-cache:/cache/hf
+      - ./artemishub_agents:/app
+      - agents-venv:/app/.venv
+    command: ["uv", "run", "pytest", "-q"]
+
+  backend:
+    profiles: ["app"]
+    image: busybox
+    command: ["echo", "artemishub_backend ainda sem scaffold; veja o plano da semana 6"]
+
+  frontend:
+    profiles: ["app"]
+    image: busybox
+    command: ["echo", "artemishub_frontend ainda sem scaffold; veja o plano da semana 6"]
+
+volumes:
+  hf-cache:
+  rag-venv:
+  agents-venv:
