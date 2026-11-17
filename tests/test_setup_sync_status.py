@@ -73,3 +73,40 @@ def test_status_conta_worktrees_e_imprime_tabela(fake_org, tmp_path, capsys):
     assert status.main(fake_org.root) == 0
     out = capsys.readouterr().out
     assert "artemishub_rag" in out and "staging" in out
+
+
+def _commit_local(repo, nome="local.txt"):
+    (repo / nome).write_text("so aqui\n", encoding="utf-8")
+    git("add", nome, cwd=repo)
+    git("-c", "user.name=T", "-c", "user.email=t@example.com", "commit", "-q", "-m", f"feat: {nome}", cwd=repo)
+    return git("rev-parse", "HEAD", cwd=repo)
+
+
+def test_sync_pula_repo_em_outra_branch(fake_org, capsys):
+    repo = fake_org.root / "artemishub_rag"
+    git("checkout", "-q", "-b", "feat/7-minha", cwd=repo)
+    fake_org.push_commit("artemishub_rag", "staging", "novo.txt")
+    assert sync.main(fake_org.root) == 0
+    assert "PULADO artemishub_rag: está em feat/7-minha, não em staging" in capsys.readouterr().out
+    assert git("branch", "--show-current", cwd=repo) == "feat/7-minha"
+
+
+def test_sync_pula_head_destacado_com_commit_so_local(fake_org, capsys):
+    repo = fake_org.root / "artemishub_rag"
+    git("checkout", "-q", "--detach", cwd=repo)
+    sha = _commit_local(repo)
+    assert sync.main(fake_org.root) == 0
+    assert "PULADO artemishub_rag: HEAD destacado com commits que só existem localmente" in capsys.readouterr().out
+    assert git("rev-parse", "HEAD", cwd=repo) == sha
+    assert git("branch", "--show-current", cwd=repo) == ""
+
+
+def test_setup_pula_head_destacado_com_commit_so_local(fake_org, capsys):
+    detach_all(fake_org)
+    repo = fake_org.root / "artemishub_rag"
+    sha = _commit_local(repo)
+    assert setup.main(fake_org.root) == 0
+    out = capsys.readouterr().out
+    assert "PULADO artemishub_rag: HEAD destacado com commits que só existem localmente" in out
+    assert git("rev-parse", "HEAD", cwd=repo) == sha
+    assert git("branch", "--show-current", cwd=fake_org.root / "artemishub_docs") == "staging"

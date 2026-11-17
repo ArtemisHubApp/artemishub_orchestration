@@ -7,7 +7,7 @@ import shutil
 import sys
 from pathlib import Path
 
-from artemis_repos import REPOS, ROOT, base_branch, checkout_base, git
+from artemis_repos import AVISO_HEAD_LOCAL, REPOS, ROOT, base_branch, checkout_base, git, head_so_local
 
 
 def main(root: Path = ROOT) -> int:
@@ -19,15 +19,22 @@ def main(root: Path = ROOT) -> int:
         print(f"ERRO: é preciso Python 3.11 ou mais novo (encontrado {atual}).", file=sys.stderr)
         return 1
 
-    git("submodule", "update", "--init", "--recursive", cwd=root)
+    # Antes do `submodule update` (que também move o HEAD): quem tem commit só local fica de fora.
+    pulados = [r for r in REPOS if (root / r / ".git").exists() and head_so_local(root / r)]
+    for repo in pulados:
+        print(f"PULADO {repo}: {AVISO_HEAD_LOCAL}")
+    seguros = [r for r in REPOS if r not in pulados]
+    if not seguros:
+        return 0
+    git("submodule", "update", "--init", "--recursive", "--", *seguros, cwd=root)
     bases = []
-    for repo in REPOS:
+    for repo in seguros:
         repo_dir = root / repo
         base = base_branch(repo_dir)
         checkout_base(repo_dir, base)
         bases.append(base)
 
-    print(f"Pronto: {len(REPOS)} repos em {', '.join(sorted(set(bases)))}")
+    print(f"Pronto: {len(seguros)} repos em {', '.join(sorted(set(bases)))}")
     return 0
 
 

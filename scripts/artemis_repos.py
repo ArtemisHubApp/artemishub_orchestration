@@ -49,6 +49,19 @@ def is_dirty(repo_dir: Path) -> bool:
     return bool(git("status", "--porcelain", cwd=repo_dir))
 
 
+AVISO_HEAD_LOCAL = (
+    "HEAD destacado com commits que só existem localmente; "
+    "crie uma branch para guardá-los (git switch -c <tipo>/<nº>-<slug>) e rode de novo"
+)
+
+
+def head_so_local(repo_dir: Path) -> bool:
+    """True se o HEAD está destacado num commit que nenhuma branch remota contém (trocar de branch o perderia)."""
+    if git("branch", "--show-current", cwd=repo_dir):
+        return False
+    return not git("branch", "-r", "--contains", "HEAD", cwd=repo_dir, check=False)
+
+
 def worktrees_root(root: Path = ROOT) -> Path:
     """Pasta das worktrees, irmã do orquestrador (fora de qualquer repo)."""
     return root.parent / "artemishub-worktrees"
