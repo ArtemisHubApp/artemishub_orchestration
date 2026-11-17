@@ -15,19 +15,23 @@ Status = Literal["mergeada", "aberta", "desconhecido"]
 _PROTEGIDAS = {"main", "staging"}
 
 
-def _gh_pr_mergeado(repo_dir: Path, branch: str) -> bool | None:
-    """True/False conforme o GitHub; None se o `gh` não existe ou falhou."""
+def _gh_pr_mergeado(repo_dir: Path, branch: str, sha: str) -> bool | None:
+    """True/False conforme o GitHub; None se o `gh` não existe ou falhou.
+
+    Só vale um PR mergeado cujo `headRefOid` é exatamente `sha` (a ponta que será julgada):
+    commits novos depois do merge, ou nome reaproveitado, não contam como prova.
+    """
     if shutil.which("gh") is None:
         return None
     try:
         result = subprocess.run(
-            ["gh", "pr", "list", "--head", branch, "--state", "merged", "--json", "number"],
+            ["gh", "pr", "list", "--head", branch, "--state", "merged", "--json", "number,headRefOid"],
             cwd=repo_dir, capture_output=True, text=True, encoding="utf-8", check=False, timeout=60,
         )
         if result.returncode != 0:
             return None
-        return bool(json.loads(result.stdout or "[]"))
-    except (OSError, subprocess.SubprocessError, ValueError):
+        return any(pr.get("headRefOid") == sha for pr in json.loads(result.stdout or "[]"))
+    except (OSError, subprocess.SubprocessError, ValueError, AttributeError):
         return None
 
 
@@ -35,21 +39,31 @@ def _ref_existe(repo_dir: Path, ref: str) -> bool:
     return bool(git("rev-parse", "--verify", "--quiet", f"{ref}^{{commit}}", cwd=repo_dir, check=False))
 
 
-def _e_ancestral(repo_dir: Path, branch: str, base: str) -> bool:
-    ref = f"refs/heads/{branch}" if _ref_existe(repo_dir, f"refs/heads/{branch}") else f"origin/{branch}"
-    if not _ref_existe(repo_dir, ref) or not _ref_existe(repo_dir, f"origin/{base}"):
+def _ref_julgada(repo_dir: Path, branch: str, remoto: bool) -> str | None:
+    """Remoto: sempre `origin/<branch>`. Local (prune): a branch local, ou origin se ela não existir."""
+    candidatas = [f"origin/{branch}"] if remoto else [f"refs/heads/{branch}", f"origin/{branch}"]
+    return next((r for r in candidatas if _ref_existe(repo_dir, r)), None)
+
+
+def _e_ancestral(repo_dir: Path, ref: str, base: str) -> bool:
+    if not _ref_existe(repo_dir, f"origin/{base}"):
         return False
     return subprocess.run(
         ["git", "merge-base", "--is-ancestor", ref, f"origin/{base}"], cwd=repo_dir, capture_output=True
     ).returncode == 0
 
 
-def merged_status(repo_dir: Path, branch: str, base: str) -> Status:
-    """`mergeada` só com prova (PR mergeado no gh ou ancestralidade); sem prova e sem gh, `desconhecido`."""
-    pr = _gh_pr_mergeado(repo_dir, branch)
-    if pr:
-        return "mergeada"
-    if _e_ancestral(repo_dir, branch, base):
+def merged_status(repo_dir: Path, branch: str, base: str, remoto: bool = False) -> Status:
+    """`mergeada` só com prova (PR mergeado com a mesma ponta no gh, ou ancestralidade).
+
+    `remoto=True` julga `origin/<branch>` (apagar no remoto); senão julga a branch local (prune).
+    Sem prova e sem gh, `desconhecido`.
+    """
+    ref = _ref_julgada(repo_dir, branch, remoto)
+    if ref is None:
+        return "desconhecido"
+    pr = _gh_pr_mergeado(repo_dir, branch, git("rev-parse", ref, cwd=repo_dir))
+    if pr or _e_ancestral(repo_dir, ref, base):
         return "mergeada"
     return "aberta" if pr is False else "desconhecido"
 
@@ -66,7 +80,7 @@ def main(root: Path = ROOT, delete: bool = False) -> int:
         git("fetch", "--prune", "origin", cwd=repo_dir)
         base = base_branch(repo_dir)
         print(f"{repo}:")
-        status = {b: merged_status(repo_dir, b, base) for b in _remotas(repo_dir)}
+        status = {b: merged_status(repo_dir, b, base, remoto=True) for b in _remotas(repo_dir)}
         if not status:
             print("  (nenhuma branch além de main/staging)")
             continue

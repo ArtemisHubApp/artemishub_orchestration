@@ -95,7 +95,7 @@ def test_prune_nao_remove_worktree_suja(fake_org, monkeypatch):
 
 
 def test_gh_diz_mergeada_squash(fake_org, monkeypatch):
-    monkeypatch.setattr(branches, "_gh_pr_mergeado", lambda repo_dir, branch: True)
+    monkeypatch.setattr(branches, "_gh_pr_mergeado", lambda repo_dir, branch, sha: True)
     p = worktree.new("rag", "feat/1-x", fake_org.root)
     commit_na_worktree(p)  # não é ancestral de staging; só o gh diz que foi mergeada
     repo_dir = fake_org.root / RAG
@@ -107,7 +107,7 @@ def test_gh_diz_mergeada_squash(fake_org, monkeypatch):
 
 
 def test_gh_diz_nao_mergeada_e_aberta(fake_org, monkeypatch):
-    monkeypatch.setattr(branches, "_gh_pr_mergeado", lambda repo_dir, branch: False)
+    monkeypatch.setattr(branches, "_gh_pr_mergeado", lambda repo_dir, branch, sha: False)
     p = worktree.new("rag", "feat/1-x", fake_org.root)
     commit_na_worktree(p)
     assert branches.merged_status(fake_org.root / RAG, "feat/1-x", "staging") == "aberta"
@@ -152,3 +152,35 @@ def test_branches_delete_sem_confirmacao_nao_apaga(fake_org, monkeypatch):
     monkeypatch.setattr("builtins.input", lambda _="": "")
     branches.main(fake_org.root, delete=True)
     assert "feat/1-mergeada" in _remotas(remote)
+
+
+def test_delete_julga_o_remoto_nao_a_branch_local_velha(fake_org, monkeypatch):
+    monkeypatch.setattr(shutil, "which", lambda _: None)
+    p = worktree.new("rag", "feat/3-velha", fake_org.root)
+    topo_staging = git("rev-parse", "HEAD", cwd=p)  # a local fica aqui: ancestral da staging
+    commit_na_worktree(p)
+    tgit("push", "-q", "origin", "HEAD:feat/3-velha", cwd=p)  # o remoto tem um commit extra, não mergeado
+    tgit("update-ref", "refs/heads/feat/3-velha", topo_staging, cwd=p)
+    monkeypatch.setattr("builtins.input", lambda _="": "s")
+    branches.main(fake_org.root, delete=True)
+    assert "feat/3-velha" in _remotas(fake_org.remotes[RAG])
+
+
+def test_gh_mergeada_com_outra_ponta_nao_apaga(fake_org, monkeypatch):
+    p = worktree.new("rag", "feat/4-reuso", fake_org.root)
+    commit_na_worktree(p)
+    tgit("push", "-q", "origin", "feat/4-reuso", cwd=p)
+    monkeypatch.setattr(shutil, "which", lambda _: "/usr/bin/gh")
+
+    class R:
+        returncode = 0
+        stdout = '[{"number": 1, "headRefOid": "0000000000000000000000000000000000000000"}]'
+
+    real_run = branches.subprocess.run
+    monkeypatch.setattr(branches.subprocess, "run", lambda *a, **k: R() if a[0][0] == "gh" else real_run(*a, **k))
+    repo_dir = fake_org.root / RAG
+    assert branches.merged_status(repo_dir, "feat/4-reuso", "staging", remoto=True) == "aberta"
+    assert worktree.prune(fake_org.root, dry_run=False) == []
+    monkeypatch.setattr("builtins.input", lambda _="": "s")
+    branches.main(fake_org.root, delete=True)
+    assert "feat/4-reuso" in _remotas(fake_org.remotes[RAG])
