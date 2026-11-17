@@ -50,7 +50,9 @@ def validate(skills_dir: Path) -> list[str]:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("skills_dir", nargs="*", type=Path, help="pastas de skills (padrão: .agents/skills e .claude/skills)")
+    parser.add_argument(
+        "skills_dir", nargs="*", type=Path, help="pastas de skills (padrão: .agents/skills e .claude/skills)"
+    )
     parser.add_argument("--root", type=Path, default=ROOT, help=argparse.SUPPRESS)
     args = parser.parse_args()
     pastas = args.skills_dir or [args.root / ".agents" / "skills", args.root / ".claude" / "skills"]

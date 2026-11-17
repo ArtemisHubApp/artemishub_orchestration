@@ -1,5 +1,4 @@
 import pytest
-
 from artemis_repos import base_branch, resolve_repo, worktrees_root
 
 

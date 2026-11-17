@@ -30,9 +30,7 @@ def resolve_repo(name: str) -> str:
 
 def git(*args: str, cwd: Path, check: bool = True) -> str:
     """Roda git em `cwd` e devolve o stdout sem espaços nas pontas."""
-    result = subprocess.run(
-        ["git", *args], cwd=cwd, capture_output=True, text=True, encoding="utf-8", check=False
-    )
+    result = subprocess.run(["git", *args], cwd=cwd, capture_output=True, text=True, encoding="utf-8", check=False)
     if check and result.returncode != 0:
         raise SystemExit(f"git {' '.join(args)} falhou em {cwd}:\n{result.stderr.strip()}")
     return result.stdout.strip()

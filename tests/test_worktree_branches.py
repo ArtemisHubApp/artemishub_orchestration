@@ -1,8 +1,7 @@
 import shutil
 
-import pytest
-
 import branches
+import pytest
 import worktree
 from artemis_repos import git
 from conftest import git as tgit

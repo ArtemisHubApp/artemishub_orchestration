@@ -4,9 +4,19 @@ import re
 
 from conftest import REPOS, ROOT
 
-TITULOS = ["## O que é o Artemis", "## Repositórios", "## Regra de ouro", "## Regras de SDD",
-           "## Branches e worktrees", "## Higiene do GitHub", "## Código limpo", "## Decisões (ADR)",
-           "## Kanban", "## Segurança", "## Submódulos: cuidados"]
+TITULOS = [
+    "## O que é o Artemis",
+    "## Repositórios",
+    "## Regra de ouro",
+    "## Regras de SDD",
+    "## Branches e worktrees",
+    "## Higiene do GitHub",
+    "## Código limpo",
+    "## Decisões (ADR)",
+    "## Kanban",
+    "## Segurança",
+    "## Submódulos: cuidados",
+]
 
 
 def _agents() -> str:
@@ -20,7 +30,7 @@ def test_agents_md_tem_secoes_e_tamanho():
 
 def test_links_locais_existem():
     """Todo link relativo aponta para arquivo existente; dentro de submódulo basta o repo existir (R3)."""
-    sem_blocos = re.sub(r"```.*?```", "", _agents(), flags=re.S)
+    sem_blocos = re.sub(r"```.*?```", "", _agents(), flags=re.DOTALL)
     for alvo in re.findall(r"\]\(([^)\s]+)\)", sem_blocos):
         if re.match(r"[a-z]+:", alvo) or alvo.startswith("#"):
             continue

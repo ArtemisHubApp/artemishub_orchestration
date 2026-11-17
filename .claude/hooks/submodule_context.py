@@ -5,6 +5,7 @@ Usa só a biblioteca padrão e sempre sai com código 0: um erro aqui nunca pode
 
 from __future__ import annotations
 
+import contextlib
 import json
 import os
 import re
@@ -65,14 +66,12 @@ def handle(payload: dict, root: Path, state_dir: Path) -> dict | None:
 
 
 def main() -> int:
-    try:
+    with contextlib.suppress(Exception):  # o hook nunca pode quebrar a sessão
         payload = json.load(sys.stdin)
         root = Path(os.environ.get("CLAUDE_PROJECT_DIR") or Path(__file__).resolve().parents[2])
         saida = handle(payload, root, Path(tempfile.gettempdir()) / "artemis-hook")
         if saida:
             print(json.dumps(saida, ensure_ascii=False))
-    except Exception:  # noqa: BLE001 - o hook nunca pode quebrar a sessão
-        pass
     return 0
 
 

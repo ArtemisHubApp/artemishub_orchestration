@@ -11,7 +11,7 @@ precisa_make = pytest.mark.skipif(shutil.which("make") is None, reason="make aus
 
 
 def compose(*args):
-    return subprocess.run(["docker", "compose", *args], cwd=ROOT, capture_output=True, text=True)
+    return subprocess.run(["docker", "compose", *args], cwd=ROOT, capture_output=True, check=False, text=True)
 
 
 @precisa_docker
@@ -36,19 +36,19 @@ def test_compose_sem_profile_so_sobe_rag_e_agents():
 
 @precisa_make
 def test_make_help_lista_alvos():
-    out = subprocess.run(["make", "help"], cwd=ROOT, capture_output=True, text=True).stdout
+    out = subprocess.run(["make", "help"], cwd=ROOT, capture_output=True, check=False, text=True).stdout
     assert all(a in out for a in ["setup", "sync", "worktree", "rag-query"])
 
 
 @precisa_make
 def test_make_alvos_documentados_no_help():
-    out = subprocess.run(["make", "help"], cwd=ROOT, capture_output=True, text=True).stdout
+    out = subprocess.run(["make", "help"], cwd=ROOT, capture_output=True, check=False, text=True).stdout
     for alvo in ["status", "prune", "branches", "rag-demo", "test-", "shell-"]:
         assert alvo in out
 
 
 @precisa_make
 def test_make_worktree_exige_repo_e_branch():
-    r = subprocess.run(["make", "worktree"], cwd=ROOT, capture_output=True, text=True)
+    r = subprocess.run(["make", "worktree"], cwd=ROOT, capture_output=True, check=False, text=True)
     assert r.returncode != 0
     assert "REPO=" in r.stderr + r.stdout

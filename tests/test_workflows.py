@@ -4,7 +4,7 @@ import pytest
 
 yaml = pytest.importorskip("yaml")
 
-from conftest import ROOT  # noqa: E402
+from conftest import ROOT
 
 WF = ROOT / ".github" / "workflows"
 

@@ -26,7 +26,12 @@ def _gh_pr_mergeado(repo_dir: Path, branch: str, sha: str) -> bool | None:
     try:
         result = subprocess.run(
             ["gh", "pr", "list", "--head", branch, "--state", "merged", "--json", "number,headRefOid"],
-            cwd=repo_dir, capture_output=True, text=True, encoding="utf-8", check=False, timeout=60,
+            cwd=repo_dir,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            check=False,
+            timeout=60,
         )
         if result.returncode != 0:
             return None
@@ -48,9 +53,15 @@ def _ref_julgada(repo_dir: Path, branch: str, remoto: bool) -> str | None:
 def _e_ancestral(repo_dir: Path, ref: str, base: str) -> bool:
     if not _ref_existe(repo_dir, f"origin/{base}"):
         return False
-    return subprocess.run(
-        ["git", "merge-base", "--is-ancestor", ref, f"origin/{base}"], cwd=repo_dir, capture_output=True
-    ).returncode == 0
+    return (
+        subprocess.run(
+            ["git", "merge-base", "--is-ancestor", ref, f"origin/{base}"],
+            cwd=repo_dir,
+            capture_output=True,
+            check=False,
+        ).returncode
+        == 0
+    )
 
 
 def merged_status(repo_dir: Path, branch: str, base: str, remoto: bool = False) -> Status:
@@ -100,7 +111,9 @@ def main(root: Path = ROOT, delete: bool = False) -> int:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--delete", action="store_true", help="apaga no remoto só as branches mergeadas (com confirmação)")
+    parser.add_argument(
+        "--delete", action="store_true", help="apaga no remoto só as branches mergeadas (com confirmação)"
+    )
     parser.add_argument("--root", type=Path, default=ROOT, help=argparse.SUPPRESS)
     args = parser.parse_args()
     raise SystemExit(main(args.root, args.delete))

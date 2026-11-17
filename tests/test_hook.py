@@ -21,7 +21,7 @@ handle = hook.handle
 
 
 COMANDO_HOOK = (
-    "sh -c 'if python3 -c \"\" >/dev/null 2>&1; then exec python3 \"$0\"; else exec python \"$0\"; fi' "
+    'sh -c \'if python3 -c "" >/dev/null 2>&1; then exec python3 "$0"; else exec python "$0"; fi\' '
     '"$CLAUDE_PROJECT_DIR/.claude/hooks/submodule_context.py"'
 )
 
@@ -80,7 +80,11 @@ def test_entradas_malformadas_devolvem_none(tmp_path):
 
 def _roda(entrada: str, **env) -> subprocess.CompletedProcess:
     return subprocess.run(
-        [sys.executable, str(HOOK)], input=entrada, text=True, capture_output=True,
+        [sys.executable, str(HOOK)],
+        input=entrada,
+        text=True,
+        capture_output=True,
+        check=False,
         env={**os.environ, **env},
     )
 
@@ -116,8 +120,11 @@ def test_settings_json_valido_e_com_hook():
     assert h["type"] == "command"
     assert h["command"] == COMANDO_HOOK
     assert set(cfg["permissions"]["deny"]) == {
-        "Read(**/.venv/**)", "Read(**/node_modules/**)", "Read(**/data/**)",
-        "Read(**/chroma*/**)", "Read(**/*.lock)",
+        "Read(**/.venv/**)",
+        "Read(**/node_modules/**)",
+        "Read(**/data/**)",
+        "Read(**/chroma*/**)",
+        "Read(**/*.lock)",
     }
     assert cfg["enabledPlugins"] == {"superpowers@claude-plugins-official": True}
     assert "extraKnownMarketplaces" not in cfg
@@ -138,6 +145,6 @@ def test_comando_configurado_roda_no_sh(tmp_path):
     comando = cfg["hooks"]["PreToolUse"][0]["hooks"][0]["command"]
     entrada = json.dumps(_payload("sessao-sh-teste", str(ROOT / "artemishub_docs/a.md")))
     env = {**os.environ, "CLAUDE_PROJECT_DIR": str(ROOT), "TMPDIR": str(tmp_path)}
-    r = subprocess.run(["sh", "-c", comando], input=entrada, text=True, capture_output=True, env=env)
+    r = subprocess.run(["sh", "-c", comando], input=entrada, text=True, capture_output=True, check=False, env=env)
     assert r.returncode == 0
     assert "artemishub_docs/AGENTS.md" in json.loads(r.stdout)["hookSpecificOutput"]["additionalContext"]

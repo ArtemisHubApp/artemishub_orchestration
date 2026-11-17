@@ -27,7 +27,11 @@ def git(*args: str, cwd: Path) -> str:
     env = {**os.environ, **_IDENTIDADE, "GIT_CONFIG_GLOBAL": os.devnull, "GIT_CONFIG_SYSTEM": os.devnull}
     result = subprocess.run(
         ["git", "-c", "protocol.file.allow=always", "-c", "init.defaultBranch=main", *args],
-        cwd=cwd, env=env, capture_output=True, text=True, check=True,
+        cwd=cwd,
+        env=env,
+        capture_output=True,
+        text=True,
+        check=True,
     )
     return result.stdout.strip()
 

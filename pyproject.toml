@@ -9,6 +9,20 @@ dev = ["pytest>=8", "ruff>=0.6", "pyyaml>=6"]
 
 [tool.ruff]
 line-length = 120
+extend-exclude = [
+    "artemishub_docs",
+    "artemishub_frontend",
+    "artemishub_backend",
+    "artemishub_agents",
+    "artemishub_rag",
+    ".agents/skills",
+    ".claude/skills",
+    "docs/superpowers",  # planos/specs em Markdown: blocos de código são exemplos, não código do repo
+]
+
+[tool.ruff.lint.per-file-ignores]
+# O guarda de versão em runtime é intencional: dá mensagem clara a quem roda com Python antigo.
+"scripts/setup.py" = ["UP036"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

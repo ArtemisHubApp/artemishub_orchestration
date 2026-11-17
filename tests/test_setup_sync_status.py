@@ -1,8 +1,8 @@
 import setup
 import status
 import sync
-from conftest import REPOS
 from artemis_repos import git
+from conftest import REPOS
 
 
 def detach_all(org):

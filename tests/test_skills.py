@@ -74,7 +74,7 @@ def test_validate_pega_name_errado(tmp_path):
 
 
 def test_validate_aceita_aspas(tmp_path):
-    _skill(tmp_path, "a", '---\nname: "a"\ndescription: \'texto: com dois pontos\'\n---\n')
+    _skill(tmp_path, "a", "---\nname: \"a\"\ndescription: 'texto: com dois pontos'\n---\n")
     assert validate_skills.validate(tmp_path) == []
 
 
