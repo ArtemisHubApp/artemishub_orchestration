@@ -54,3 +54,16 @@ def is_dirty(repo_dir: Path) -> bool:
 def worktrees_root(root: Path = ROOT) -> Path:
     """Pasta das worktrees, irmã do orquestrador (fora de qualquer repo)."""
     return root.parent / "artemishub-worktrees"
+
+
+def checkout_base(repo_dir: Path, base: str) -> None:
+    """Fica na branch `base` atualizada (fetch + checkout + pull --ff-only), sem descartar nada.
+
+    Se a branch local ainda não existe, cria rastreando `origin/<base>`.
+    """
+    git("fetch", "origin", cwd=repo_dir)
+    if git("branch", "--list", base, cwd=repo_dir):
+        git("checkout", base, cwd=repo_dir)
+        git("pull", "--ff-only", cwd=repo_dir)
+    else:
+        git("checkout", "-b", base, "--track", f"origin/{base}", cwd=repo_dir)

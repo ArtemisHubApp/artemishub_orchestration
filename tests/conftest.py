@@ -3,6 +3,8 @@
 import os
 import shutil
 import subprocess
+import tempfile
+import uuid
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -38,15 +40,16 @@ class FakeOrg:
     def push_commit(self, repo: str, branch: str, filename: str) -> str:
         """Cria um commit novo na branch do remoto (via clone temporario) e devolve o SHA."""
         remote = self.remotes[repo]
-        clone = remote.parent / f"_tmp_clone_{repo}"
-        git("clone", "-q", "--branch", branch, str(remote), str(clone), cwd=remote.parent)
-        (clone / filename).write_text(f"{filename}\n", encoding="utf-8")
-        git("add", filename, cwd=clone)
-        git("commit", "-q", "-m", f"feat: {filename}", cwd=clone)
-        git("push", "-q", "origin", branch, cwd=clone)
-        sha = git("rev-parse", "HEAD", cwd=clone)
-        _remover(clone)
-        return sha
+        clone = Path(tempfile.mkdtemp(prefix=f"_tmp_clone_{repo}_", dir=remote.parent))
+        try:
+            git("clone", "-q", "--branch", branch, str(remote), str(clone), cwd=remote.parent)
+            (clone / filename).write_text(f"{filename} {uuid.uuid4()}\n", encoding="utf-8")
+            git("add", filename, cwd=clone)
+            git("commit", "-q", "-m", f"feat: {filename}", cwd=clone)
+            git("push", "-q", "origin", branch, cwd=clone)
+            return git("rev-parse", "HEAD", cwd=clone)
+        finally:
+            _remover(clone)
 
 
 def _remover(path: Path) -> None:
