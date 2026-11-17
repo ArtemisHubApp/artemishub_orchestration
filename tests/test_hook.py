@@ -57,6 +57,29 @@ def test_caminho_windows(tmp_path, monkeypatch):
     assert handle(p, ROOT, tmp_path) is not None
 
 
+WT = ROOT.parent / "artemishub-worktrees"
+
+
+def test_reconhece_worktree_irma_do_orquestrador(tmp_path):
+    p = _payload("s-wt", str(WT / "artemishub_rag/feat/20-ocr/src/query.py"))
+    out = handle(p, ROOT, tmp_path)
+    assert out["hookSpecificOutput"]["additionalContext"] == (
+        "Você está em artemishub_rag. Leia artemishub_rag/AGENTS.md (ou README.md) antes de alterar."
+    )
+    assert handle(p, ROOT, tmp_path) is None  # mesma sessão e mesmo repo: um aviso só
+
+
+def test_worktree_caminho_windows(tmp_path, monkeypatch):
+    monkeypatch.setattr(os.path, "normcase", str.lower)
+    p = _payload("s-wt-win", str(WT).upper() + "\\ARTEMISHUB_DOCS\\docs\\5-x\\a.md")
+    assert handle(p, ROOT, tmp_path) is not None
+
+
+def test_worktree_de_repo_desconhecido_nao_conta(tmp_path):
+    assert handle(_payload("s", str(WT / "artemishub_rag_old/feat/1-x/a.py")), ROOT, tmp_path) is None
+    assert handle(_payload("s", str(WT / "outra_coisa.txt")), ROOT, tmp_path) is None
+
+
 def test_fora_de_submodulo(tmp_path):
     assert handle(_payload("s", str(ROOT / "README.md")), ROOT, tmp_path) is None
 

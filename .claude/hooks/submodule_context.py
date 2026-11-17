@@ -30,11 +30,13 @@ def _normalizar(caminho: str) -> str:
 
 
 def _repo_do_arquivo(caminho: str, root: Path) -> str | None:
+    """Submódulo dono do arquivo: `<root>/<repo>/...` ou a worktree `<pai do root>/artemishub-worktrees/<repo>/...`."""
     arquivo = _normalizar(caminho)
-    base = _normalizar(str(root))
-    for repo in REPOS:
-        if arquivo.startswith(os.path.join(base, repo) + os.sep):
-            return repo
+    bases = (_normalizar(str(root)), _normalizar(str(root.parent / "artemishub-worktrees")))
+    for base in bases:
+        for repo in REPOS:
+            if arquivo.startswith(os.path.join(base, repo) + os.sep):
+                return repo
     return None
 
 
