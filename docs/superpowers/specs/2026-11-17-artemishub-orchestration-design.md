@@ -86,7 +86,7 @@ artemishub_orchestration/
 │   ├── sync.py                 # atualiza o orquestrador e cada submódulo na staging
 │   ├── status.py               # branch e pendências de cada submódulo e das worktrees
 │   ├── worktree.py             # new/list/remove: worktree + branch a partir de origin/staging (6.10)
-│   └── sync_skills.py          # copia .claude/skills/artemis-sdd → .agents/skills/artemis-sdd
+│   └── sync_skills.py          # copia .agents/skills/artemis-sdd (fonte) → .claude/skills/artemis-sdd (cópia gerada)
 ├── .claude/
 │   ├── settings.json           # hooks + bloqueio de leitura de .venv, node_modules, data/, chroma
 │   ├── hooks/
@@ -137,11 +137,11 @@ Decidido pela Amanda: Superpowers como esteira, mais uma skill do projeto.
 
 - **Superpowers como esteira de SDD:** brainstorming → spec → writing-plans → test-driven-development → subagent-driven-development ou executing-plans → requesting-code-review → finishing-a-development-branch. Ele já é usado pela equipe e está completo.
 - **Superpowers é obrigatório** (decisão da Amanda) e chega a cada agente pelo melhor caminho:
-  - **Claude:** pelo **plugin oficial**, habilitado no `.claude/settings.json` do repo (`extraKnownMarketplaces` + `enabledPlugins`). Quem abre o repo no Claude Code recebe o pedido de instalação. O plugin já traz o hook de início de sessão que carrega o `using-superpowers`, e a cópia em pasta não faz isso.
+  - **Claude:** pelo **plugin oficial**, habilitado no `.claude/settings.json` do repo só com `enabledPlugins: {"superpowers@claude-plugins-official": true}`, sem `extraKnownMarketplaces` (o marketplace oficial já é conhecido pelo Claude Code). Quem abre o repo no Claude Code recebe o pedido de instalação. O plugin já traz o hook de início de sessão que carrega o `using-superpowers`, e a cópia em pasta não faz isso.
   - **Codex, Gemini e GPT:** por uma **cópia única em `.agents/skills/`**, com `skills-lock.json` registrando a origem, no formato que o RAG já usa. Atualizar essa cópia é um PR no orquestrador.
   - **Para o Claude não ver as skills em dobro**, `.claude/skills/` **não** aponta para `.agents/skills/` inteiro: contém só a `artemis-sdd`. O Claude pega o Superpowers pelo plugin e a `artemis-sdd` pela pasta.
-  - **Sem links simbólicos.** A equipe usa Windows, onde links do git costumam virar arquivos de texto. A `artemis-sdd` é editada em `.claude/skills/artemis-sdd/`. O `scripts/sync_skills.py` copia a pasta para `.agents/skills/artemis-sdd/`, e as duas cópias são commitadas. O CI `skills-in-sync` falha se elas divergirem, então a duplicação é controlada e não vira drift.
-- **Escrever uma skill do projeto, `artemis-sdd`, em `.claude/skills/`**, com o que é só do Artemis:
+  - **Sem links simbólicos.** A equipe usa Windows, onde links do git costumam virar arquivos de texto. A fonte editável da `artemis-sdd` é `.agents/skills/artemis-sdd/`; `.claude/skills/artemis-sdd/` é uma cópia gerada. O `scripts/sync_skills.py` copia a fonte para `.claude/`, e as duas são commitadas. Se a cópia em `.claude/` tiver mudanças não commitadas que divergem da fonte, o script recusa e não apaga nada (a pessoa leva a edição para a fonte). O CI `skills-in-sync` falha se elas divergirem, então a duplicação é controlada e não vira drift.
+- **Escrever uma skill do projeto, `artemis-sdd`, em `.agents/skills/`** (copiada para `.claude/skills/`), com o que é só do Artemis:
   - classificação de tamanho (S0 edição direta, S1 plano curto, S2/S3 spec completa);
   - onde salvar spec e plano;
   - ligação com o kanban (issue, `Closes #`, semana);

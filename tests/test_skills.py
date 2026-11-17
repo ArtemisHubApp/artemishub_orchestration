@@ -4,8 +4,10 @@ import json
 import shutil
 from pathlib import Path
 
+import pytest
 import sync_skills
 import validate_skills
+from conftest import git
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -34,16 +36,53 @@ def test_copias_em_sincronia():
 
 def _raiz_falsa(tmp_path: Path) -> Path:
     shutil.copytree(ROOT / ".agents/skills/artemis-sdd", tmp_path / ".agents/skills/artemis-sdd")
+    git("init", "-q", cwd=tmp_path)
     sync_skills.sync(tmp_path)
+    _commita(tmp_path)
     return tmp_path
+
+
+def _commita(raiz: Path) -> None:
+    git("add", "-A", cwd=raiz)
+    git("commit", "-q", "-m", "chore: estado", cwd=raiz)
 
 
 def test_sync_recria_destino(tmp_path):
     raiz = _raiz_falsa(tmp_path)
     (raiz / ".claude/skills/artemis-sdd/lixo.txt").write_text("x", encoding="utf-8")
+    _commita(raiz)  # diferença já commitada: recuperável pelo git, pode sobrescrever
     sync_skills.sync(raiz)
     assert not (raiz / ".claude/skills/artemis-sdd/lixo.txt").exists()
     assert sync_skills.check(raiz) == []
+
+
+def test_sync_recusa_apagar_edicao_nao_commitada_na_copia(tmp_path):
+    raiz = _raiz_falsa(tmp_path)
+    alvo = raiz / ".claude/skills/artemis-sdd/SKILL.md"
+    alvo.write_bytes(alvo.read_bytes() + b"\nminha edicao\n")
+    with pytest.raises(SystemExit, match="edite em .agents/skills/artemis-sdd") as erro:
+        sync_skills.sync(raiz)
+    assert "não foram apagadas" in str(erro.value)
+    assert alvo.read_bytes().endswith(b"minha edicao\n")
+
+
+def test_sync_sem_git_nao_apaga_copia_divergente(tmp_path):
+    shutil.copytree(ROOT / ".agents/skills/artemis-sdd", tmp_path / ".agents/skills/artemis-sdd")
+    sync_skills.sync(tmp_path)  # destino ainda não existe: copia normalmente
+    extra = tmp_path / ".claude/skills/artemis-sdd/extra.md"
+    extra.write_text("x", encoding="utf-8")
+    with pytest.raises(SystemExit, match="não foram apagadas"):
+        sync_skills.sync(tmp_path)
+    assert extra.exists()
+
+
+def test_sync_exige_fonte(tmp_path):
+    copia = tmp_path / ".claude/skills/artemis-sdd/SKILL.md"
+    copia.parent.mkdir(parents=True)
+    copia.write_text("x", encoding="utf-8")
+    with pytest.raises(SystemExit, match=r"\.agents/skills/artemis-sdd"):
+        sync_skills.sync(tmp_path)
+    assert copia.read_text(encoding="utf-8") == "x"
 
 
 def test_check_detecta_divergencia(tmp_path):

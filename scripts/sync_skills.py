@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import shutil
+import subprocess
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -18,12 +19,34 @@ def _destino(root: Path) -> Path:
     return root / ".claude" / "skills" / SKILL
 
 
+def _copia_tem_mudanca_nao_commitada(root: Path) -> bool:
+    """True se `git status` mostra algo na cópia; fora de um repo git, sem como provar, assume que sim."""
+    resultado = subprocess.run(
+        ["git", "status", "--porcelain", "--", f".claude/skills/{SKILL}"],
+        cwd=root,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        check=False,
+    )
+    return resultado.returncode != 0 or bool(resultado.stdout.strip())
+
+
 def sync(root: Path = ROOT) -> None:
-    destino = _destino(root)
+    """Recria a cópia a partir da fonte; recusa se isso apagaria edição não commitada na cópia."""
+    fonte, destino = _fonte(root), _destino(root)
+    if not fonte.is_dir():
+        raise SystemExit(f"Fonte não encontrada: .agents/skills/{SKILL}/. Nada foi alterado.")
+    if destino.exists() and check(root) and _copia_tem_mudanca_nao_commitada(root):
+        raise SystemExit(
+            f"Recusado: .claude/skills/{SKILL}/ é cópia gerada e tem mudanças não commitadas. "
+            f"edite em .agents/skills/{SKILL}; suas mudanças em .claude/skills/{SKILL} não foram apagadas. "
+            "Leve-as para a fonte e rode de novo."
+        )
     if destino.exists():
         shutil.rmtree(destino)
     destino.parent.mkdir(parents=True, exist_ok=True)
-    shutil.copytree(_fonte(root), destino)
+    shutil.copytree(fonte, destino)
 
 
 def _arquivos(base: Path) -> dict[str, bytes]:
