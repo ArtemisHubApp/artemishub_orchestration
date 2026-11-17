@@ -7,7 +7,7 @@
 O Grupo 11 (Camila, Amanda, Ana Julia, Eduarda) desenvolve o Artemis em 5 repositórios na org `ArtemisHubApp` e trabalha com vibecoding, ou seja, boa parte do código é escrita por agentes de IA. Hoje:
 
 - nenhum repo tem `CLAUDE.md` ou `AGENTS.md`, então cada sessão de IA começa sem saber o que é o Artemis, como os repos se ligam ou como a equipe trabalha;
-- as regras de SDD (spec-driven development) existem só dentro do `artemishub_rag`, em três cópias (`.agents/skills`, `.claude/skills` com links para ela e `agent/skills` como cópia real);
+- as regras de SDD (spec-driven development) estão copiadas repo a repo: o `artemishub_rag` tem três cópias (`.agents/skills`, `.claude/skills` com links para ela e `agent/skills` como cópia real), e o `artemishub_agents` ganhou mais uma em 2026-11-17 (PR #29, `.claude/skills` + `skills-lock.json`, as mesmas 16 skills). Cada repo novo tende a copiar de novo;
 - a skill `orchestrator` de SDD encaminha para etapas (`grill`, `spec`, `test-evals`, `build`, `review-commit`) que não existem no repo.
 
 **Objetivo:** um repo guarda-chuva, nos moldes do `kyte-ai-orquestration`, que seja **a única fonte das regras de SDD e do contexto do projeto para agentes de IA**, e que deixe qualquer integrante abrir o projeto inteiro com um clone só.
@@ -54,7 +54,7 @@ O Grupo 11 (Camila, Amanda, Ana Julia, Eduarda) desenvolve o Artemis em 5 reposi
 - Precisa funcionar com Codex, Gemini, Claude e GPT.
 - Superpowers é imprescindível, e no Claude entra como plugin.
 - A equipe usa Windows: sem links simbólicos e com scripts multiplataforma.
-- PR para limpar as cópias de skills do `artemishub_rag` depois que o orquestrador estiver no ar.
+- Centralizar as skills: PRs para tirar as cópias do `artemishub_rag` e do `artemishub_agents` (que ganhou skills no PR #29) depois que o orquestrador estiver no ar.
 - O escopo inclui CI/CD e lockfiles (`uv.lock`) bem resolvidos dentro dos repos dos submódulos (seção 6.7).
 - O `docker-compose.yml` é adiantado para agora, com o que já existe (6.8).
 - ADRs no `artemishub_docs` são importantes e entram no escopo (6.9).
@@ -163,7 +163,11 @@ Todos os scripts são Python 3, só com a biblioteca padrão, e rodam igual em W
 ### 6.6 Mudanças nos repos filhos (PRs separados, depois do orquestrador)
 
 - Cada repo ganha um `AGENTS.md` curto: o que o repo é, como rodar e testar, e a frase "Regras gerais e de SDD: veja o `artemishub_orchestration`."
-- `artemishub_rag`: um PR para remover `.agents/skills`, `.claude/skills`, `agent/skills` e `skills-lock.json`, aberto depois que o orquestrador estiver no ar (aprovado pela Amanda; combinar o merge com quem cuida do RAG). O `docs/superpowers/plans/` do RAG fica onde está.
+- **Centralizar as skills (aprovado pela Amanda):** depois que o orquestrador estiver no ar, um PR em cada repo que tem cópia, combinando o merge com quem cuida dele:
+  - `artemishub_rag`: remover `.agents/skills`, `.claude/skills`, `agent/skills` e `skills-lock.json`;
+  - `artemishub_agents`: remover `.claude/skills` e `skills-lock.json` (chegaram no PR #29);
+  - nos dois, a `orchestrator` sai junto (6.3), e o `docs/superpowers/plans|specs/` de cada repo fica onde está, porque é trabalho do repo, não regra.
+- **Para não voltar a copiar (minha decisão):** o workflow reutilizável de CI (6.7) tem um passo `no-local-skills` que falha se o repo filho tiver `.claude/skills/`, `.agents/skills/`, `agent/skills/` ou `skills-lock.json`, com a mensagem "skills ficam no artemishub_orchestration". O `AGENTS.md` traz a mesma regra. Skill nova do projeto entra por PR no orquestrador.
 
 ### 6.7 CI/CD e dependências nos submódulos (pedido da Amanda)
 
@@ -172,14 +176,14 @@ Todos os scripts são Python 3, só com a biblioteca padrão, e rodam igual em W
 | Repo | Dependências | CI | CD |
 |---|---|---|---|
 | `rag` | **4 fontes**: `pyproject.toml` + `uv.lock`, `requirements.txt`, `requirements-dev.txt` e `requirements-validation.lock` (snapshot de Python 3.14 num projeto que pede `<3.13`) | `uv sync` **sem `--locked`**, então o `uv.lock` pode ficar desatualizado sem ninguém notar; ruff + pytest em 3.11/3.12; `setup-uv@v3` desatualizado. O `Dockerfile` ignora o `uv.lock` (usa pip + `requirements.txt`) e só roda pytest | nenhum |
-| `agents` | `uv.lock` + DVC | **nenhum** (existem testes) | nenhum |
+| `agents` | `uv.lock` + DVC | ganhou CI no PR #29, **já no padrão bom**: `uv sync --locked`, ruff e pytest em 3.12/3.13, `setup-uv@v6`. Serve de **base para o workflow reutilizável** | nenhum |
 | `docs` | `requirements.txt` com pip | build do MkDocs `--strict` | GitHub Pages ✅ |
 | `backend`, `frontend` | sem código | nenhum | nenhum |
 
 **Proposta (minhas decisões, para corrigir):**
 
 1. **O uv é o único gerenciador nos repos Python** (`rag` e `agents`, mais o `backend` se for Python). O `uv.lock` é commitado e é a única fonte de versões. No `rag`, saem `requirements*.txt` e `requirements-validation.lock`; quem precisar de `requirements.txt` gera com `uv export`. `[tool.uv] dev-dependencies` passa para `[dependency-groups]`.
-2. **A versão de Python é a mesma em todos os repos:** `.python-version` = 3.12 e `requires-python` compatível.
+2. **Python base 3.12 em todos os repos** (`.python-version`). O `rag` hoje pede `<3.13` e o `agents` testa 3.12 e 3.13. O workflow reutilizável recebe a matriz de versões como parâmetro, e cada repo declara a sua.
 3. **Workflows reutilizáveis no orquestrador**, para centralizar como as regras: `artemishub_orchestration/.github/workflows/python-ci.yml` (`on: workflow_call`). Cada repo filho tem um `ci.yml` de cerca de 5 linhas com `uses: ArtemisHubApp/artemishub_orchestration/.github/workflows/python-ci.yml@main`. Os repos são públicos, então a chamada entre repos funciona.
 4. **O que o `python-ci` checa em todo PR e push para `staging` e `main`:**
    - `uv lock --check`: o lock está em dia com o `pyproject`;
@@ -255,7 +259,7 @@ origin/staging ──► worktree + branch feat/<issue>-<slug> ──► PR → 
 - Numa sessão nova aberta na raiz, no Claude Code, no Codex e no Gemini CLI, a pergunta "o que é o artemishub_agents e como eu rodo o RAG?" é respondida certo sem colar contexto.
 - Editar um arquivo em `artemishub_rag/` dispara o aviso do hook uma vez.
 - Pedir "implementa X" leva o agente a criar ou pedir a issue e seguir a esteira de SDD na profundidade certa.
-- Existe uma única cópia das regras de SDD na org.
+- Existe uma única cópia das regras de SDD na org: `rag` e `agents` sem pasta de skills, e o passo `no-local-skills` do CI ativo nos dois.
 - No Windows, só com Docker Desktop e git, `docker compose run --rm rag python -m src.query "..."` responde.
 - `python scripts/worktree.py new rag feat/1-teste` cria a worktree em `../artemishub-worktrees/` a partir de `origin/staging`, e um PR aberto dali vai para `staging` por padrão.
 - Os ADRs 0001 a 0006 aparecem no site do `artemishub_docs`.
