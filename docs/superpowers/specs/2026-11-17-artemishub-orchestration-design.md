@@ -58,6 +58,7 @@ O Grupo 11 (Camila, Amanda, Ana Julia, Eduarda) desenvolve o Artemis em 5 reposi
 - O escopo inclui CI/CD e lockfiles (`uv.lock`) bem resolvidos dentro dos repos dos submódulos (seção 6.7).
 - O `docker-compose.yml` é adiantado para agora, com o que já existe (6.8).
 - ADRs no `artemishub_docs` são importantes e entram no escopo (6.9).
+- Regra de branches: worktree + branch a partir da `staging`, e só depois `staging → main` (produção) (6.10).
 - Esteira de SDD: Superpowers mais a skill `artemis-sdd`. A `orchestrator` do RAG, que aponta para etapas inexistentes, não vem para o orquestrador.
 
 ## 6. Design
@@ -66,7 +67,7 @@ O Grupo 11 (Camila, Amanda, Ana Julia, Eduarda) desenvolve o Artemis em 5 reposi
 
 ```
 artemishub_orchestration/
-├── .gitmodules                 # 5 submódulos, todos por HTTPS, branch = main
+├── .gitmodules                 # 5 submódulos, todos por HTTPS, branch = staging
 ├── artemishub_docs/            # submódulo
 ├── artemishub_frontend/        # submódulo
 ├── artemishub_backend/         # submódulo
@@ -78,9 +79,10 @@ artemishub_orchestration/
 ├── README.md                   # como começar (humanos) + tabela de repos
 ├── Makefile                    # atalho opcional (macOS/Linux): make setup → python scripts/setup.py
 ├── scripts/                    # em Python, não bash, para rodar igual no Windows
-│   ├── setup.py                # init dos submódulos na main + checagens básicas
-│   ├── sync.py                 # atualiza o orquestrador e cada submódulo na main
-│   ├── status.py               # branch e pendências de cada submódulo
+│   ├── setup.py                # init dos submódulos na staging + checagens básicas
+│   ├── sync.py                 # atualiza o orquestrador e cada submódulo na staging
+│   ├── status.py               # branch e pendências de cada submódulo e das worktrees
+│   ├── worktree.py             # new/list/remove: worktree + branch a partir de origin/staging (6.10)
 │   └── sync_skills.py          # copia .claude/skills/artemis-sdd → .agents/skills/artemis-sdd
 ├── .claude/
 │   ├── settings.json           # hooks + bloqueio de leitura de .venv, node_modules, data/, chroma
@@ -120,7 +122,7 @@ Fonte única, em português, com no máximo cerca de 250 linhas. Seções:
 5. **Fluxo do kanban:** resumo e link para `artemishub_docs/docs/guias/kanban.md` (sem duplicar).
 6. **Segurança:** nunca commitar `.env`; repos públicos; nenhum dado pessoal real em fixtures (LGPD).
 7. **Lições de submódulo:**
-   - O checkout local pode estar atrasado. Para saber o estado real, use `git fetch` + `git show origin/main:<arquivo>`.
+   - O checkout local pode estar atrasado. Para saber o estado real, use `git fetch` + `git show origin/staging:<arquivo>` (ou `origin/main` para ver o que está em produção).
    - Worktrees ficam fora do repo, em `../artemishub-worktrees/`.
    - Sem caminhos absolutos.
 
@@ -151,12 +153,12 @@ Decidido pela Amanda: Superpowers como esteira, mais uma skill do projeto.
 
 Todos os scripts são Python 3, só com a biblioteca padrão, e rodam igual em Windows, macOS e Linux (`python scripts/setup.py`). O `Makefile` é só atalho para quem tem `make`. Os hooks no `settings.json` chamam o interpretador de um jeito que funcione no Windows, onde muitas vezes não existe `python3`; quem construir testa isso.
 
-- `scripts/setup.py` (ou `make setup`): confere `git` e Python, roda `git submodule update --init --recursive` e coloca cada submódulo na `main` (`git submodule foreach 'git checkout main && git pull'`). Os submódulos não ficam em *detached HEAD*: quem faz vibecoding não deve tropeçar nisso.
-- `scripts/sync.py` (ou `make sync`, ou `/sync`): `git pull` no orquestrador e `pull` na `main` de cada submódulo, avisando quando houver mudança local não commitada (sem descartar nada).
+- `scripts/setup.py` (ou `make setup`): confere `git` e Python, roda `git submodule update --init --recursive` e coloca cada submódulo na `staging` (`git submodule foreach 'git checkout staging && git pull'`). Os submódulos não ficam em *detached HEAD*: quem faz vibecoding não deve tropeçar nisso.
+- `scripts/sync.py` (ou `make sync`, ou `/sync`): `git pull` no orquestrador e `pull` na `staging` de cada submódulo, avisando quando houver mudança local não commitada (sem descartar nada).
 - `scripts/status.py` (ou `make status`): branch e mudanças pendentes de cada submódulo.
 - `/start`: roda o setup e explica cada passo em português simples.
 
-**Ponteiros dos submódulos:** a equipe trabalha sempre na `main` de cada repo. O SHA gravado no orquestrador é informativo, atualizado por um commit `chore: bump submodules` quando alguém quiser, sem cobrança. Essa é **minha decisão**, igual ao `--remote` do Kyte.
+**Ponteiros dos submódulos:** os submódulos acompanham a `staging` de cada repo (6.10). O SHA gravado no orquestrador é informativo, atualizado por um commit `chore: bump submodules` quando alguém quiser, sem cobrança. Essa é **minha decisão**, igual ao `--remote` do Kyte.
 
 ### 6.6 Mudanças nos repos filhos (PRs separados, depois do orquestrador)
 
@@ -179,13 +181,13 @@ Todos os scripts são Python 3, só com a biblioteca padrão, e rodam igual em W
 1. **O uv é o único gerenciador nos repos Python** (`rag` e `agents`, mais o `backend` se for Python). O `uv.lock` é commitado e é a única fonte de versões. No `rag`, saem `requirements*.txt` e `requirements-validation.lock`; quem precisar de `requirements.txt` gera com `uv export`. `[tool.uv] dev-dependencies` passa para `[dependency-groups]`.
 2. **A versão de Python é a mesma em todos os repos:** `.python-version` = 3.12 e `requires-python` compatível.
 3. **Workflows reutilizáveis no orquestrador**, para centralizar como as regras: `artemishub_orchestration/.github/workflows/python-ci.yml` (`on: workflow_call`). Cada repo filho tem um `ci.yml` de cerca de 5 linhas com `uses: ArtemisHubApp/artemishub_orchestration/.github/workflows/python-ci.yml@main`. Os repos são públicos, então a chamada entre repos funciona.
-4. **O que o `python-ci` checa em todo PR e push na `main`:**
+4. **O que o `python-ci` checa em todo PR e push para `staging` e `main`:**
    - `uv lock --check`: o lock está em dia com o `pyproject`;
    - `uv sync --locked`: instala exatamente o que está no lock;
    - `ruff check` + `ruff format --check`;
    - `pytest`, sem baixar modelo nem chamar LLM (o que precisar disso fica atrás de uma marca, rodando à parte);
    - gitleaks.
-5. **Proteção da `main` em cada repo:** PR obrigatório, CI verde e 1 aprovação. Só alguém com acesso de admin à org consegue configurar isso.
+5. **Proteção da `staging` e da `main` em cada repo:** PR obrigatório, CI verde e 1 aprovação. Na `main`, só entram PRs vindos da `staging` (6.10). Só alguém com acesso de admin à org consegue configurar isso.
 6. **Atualização de dependências:** Dependabot com `package-ecosystem: uv`, uma vez por semana e com PRs agrupados, para não inundar a equipe.
 7. **Dockerfile do `rag`:** passa a usar `uv sync --frozen` em vez de pip, para a imagem ter as mesmas versões do CI. A imagem passa a servir para rodar o RAG, não só os testes.
 8. **CD:** por enquanto só o deploy do `docs` no Pages, que já existe. Ainda não há onde publicar o app. O destino de deploy é decidido na semana 6, junto com o compose (seção 9).
@@ -216,9 +218,30 @@ Os READMEs dos repos já prometem "decisões registradas como ADR no `artemishub
   - 0002: `AGENTS.md` como fonte única, para uma equipe que usa vários agentes;
   - 0003: SDD com Superpowers + `artemis-sdd` (plugin no Claude, cópia para os demais);
   - 0004: uv + `uv.lock` como padrão e workflows de CI reutilizáveis;
-  - 0005: compose como ambiente de desenvolvimento antes do app existir.
+  - 0005: compose como ambiente de desenvolvimento antes do app existir;
+  - 0006: fluxo `staging → main` com worktrees.
 - **Regra no `AGENTS.md`:** toda decisão que muda arquitetura, stack ou processo gera um ADR no `artemishub_docs`, no mesmo ciclo. O agente propõe o rascunho e a equipe aprova no PR. A skill `artemis-sdd` lembra disso na etapa de spec.
 - O orquestrador **não** guarda ADRs próprios: só aponta para a pasta do `docs`.
+
+### 6.10 Branches e worktrees: `staging` antes de produção (pedido da Amanda)
+
+**Regra:** todo trabalho nasce numa **worktree com branch própria, criada a partir de `origin/staging`**. O PR vai para `staging`. A `main` é produção e só recebe PRs de `staging → main`.
+
+```
+origin/staging ──► worktree + branch feat/<issue>-<slug> ──► PR → staging (CI + 1 review)
+                                                                   │
+                                     PR de release staging → main (CI verde) ──► produção
+```
+
+- **Branches:** cada repo filho ganha uma branch `staging`, criada a partir da `main` atual. Nome das branches de trabalho: `feat/`, `fix/`, `chore/` ou `docs/`, seguido de `<nº issue>-<slug>`. Exemplo: `feat/20-ocr-diretrizes`.
+- **Worktrees fora dos repos**, em `../artemishub-worktrees/<repo>/<branch>/`, ao lado do orquestrador (lição do Kyte: uma worktree dentro do submódulo vira milhares de arquivos não rastreados). `scripts/worktree.py new rag feat/20-ocr-diretrizes` faz `git fetch` e `git worktree add -b … origin/staging` no submódulo certo. O script também tem `list` e `remove`, só com Python, e funciona no Windows.
+- **Por que worktree:** cada integrante, ou cada agente, trabalha numa pasta isolada sem mexer no checkout da `staging` que o compose e os outros usam. Dá para ter duas tarefas abertas ao mesmo tempo.
+- **No `AGENTS.md` e na `artemis-sdd`:** "antes de editar código, crie a worktree com `scripts/worktree.py`. Nunca commite direto na `staging` nem na `main`." Para quem usa Claude, a skill `using-git-worktrees` do Superpowers segue a mesma pasta e a mesma base.
+- **Kanban e `Closes #`:** o GitHub só fecha a issue automaticamente quando o PR entra na **branch padrão** do repo. **Minha decisão:** tornar `staging` a branch padrão de cada repo. Assim os PRs abrem contra ela por padrão e o `Closes #` funciona no merge em staging, que é quando o card vai para Testing ou Done. A `main` continua sendo produção.
+- **Release `staging → main`:** um PR com o título `release: <data>`, aberto por qualquer integrante quando a `staging` estiver estável. Faz parte do fechamento de cada semana do roadmap.
+- **`artemishub_docs`:** segue a mesma regra. O site no Pages continua publicando a partir da `main`, então só o que passou pela `staging` vai ao ar.
+- **O orquestrador em si** é pequeno e muda pouco. Ele também usa `staging → main`, por consistência.
+- **Criar a `staging`, trocar a branch padrão e configurar as proteções** exige acesso de admin na org. Fica numa issue para quem tem esse acesso.
 
 ## 7. Deixado para quem constrói
 
@@ -228,13 +251,14 @@ Os READMEs dos repos já prometem "decisões registradas como ADR no `artemishub
 
 ## 8. Critérios de sucesso
 
-- `git clone --recurse-submodules … && python scripts/setup.py` funciona numa máquina limpa, **inclusive no Windows**, e deixa os 5 repos na `main`.
+- `git clone --recurse-submodules … && python scripts/setup.py` funciona numa máquina limpa, **inclusive no Windows**, e deixa os 5 repos na `staging`.
 - Numa sessão nova aberta na raiz, no Claude Code, no Codex e no Gemini CLI, a pergunta "o que é o artemishub_agents e como eu rodo o RAG?" é respondida certo sem colar contexto.
 - Editar um arquivo em `artemishub_rag/` dispara o aviso do hook uma vez.
 - Pedir "implementa X" leva o agente a criar ou pedir a issue e seguir a esteira de SDD na profundidade certa.
 - Existe uma única cópia das regras de SDD na org.
 - No Windows, só com Docker Desktop e git, `docker compose run --rm rag python -m src.query "..."` responde.
-- Os ADRs 0001 a 0005 aparecem no site do `artemishub_docs`.
+- `python scripts/worktree.py new rag feat/1-teste` cria a worktree em `../artemishub-worktrees/` a partir de `origin/staging`, e um PR aberto dali vai para `staging` por padrão.
+- Os ADRs 0001 a 0006 aparecem no site do `artemishub_docs`.
 - `rag` e `agents` usam o workflow reutilizável, com CI verde, `uv lock --check` passando e um só arquivo de dependências travadas (`uv.lock`).
 
 ## 9. Futuro (fora do escopo agora)
