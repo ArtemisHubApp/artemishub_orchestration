@@ -55,6 +55,7 @@ O Grupo 11 (Camila, Amanda, Ana Julia, Eduarda) desenvolve o Artemis em 5 reposi
 - Superpowers é imprescindível, e no Claude entra como plugin.
 - A equipe usa Windows: sem links simbólicos e com scripts multiplataforma.
 - PR para limpar as cópias de skills do `artemishub_rag` depois que o orquestrador estiver no ar.
+- O escopo inclui CI/CD e lockfiles (`uv.lock`) bem resolvidos dentro dos repos dos submódulos (seção 6.7).
 - Esteira de SDD: Superpowers mais a skill `artemis-sdd`. A `orchestrator` do RAG, que aponta para etapas inexistentes, não vem para o orquestrador.
 
 ## 6. Design
@@ -158,6 +159,35 @@ Todos os scripts são Python 3, só com a biblioteca padrão, e rodam igual em W
 - Cada repo ganha um `AGENTS.md` curto: o que o repo é, como rodar e testar, e a frase "Regras gerais e de SDD: veja o `artemishub_orchestration`."
 - `artemishub_rag`: um PR para remover `.agents/skills`, `.claude/skills`, `agent/skills` e `skills-lock.json`, aberto depois que o orquestrador estiver no ar (aprovado pela Amanda; combinar o merge com quem cuida do RAG). O `docs/superpowers/plans/` do RAG fica onde está.
 
+### 6.7 CI/CD e dependências nos submódulos (pedido da Amanda)
+
+**Situação em 2026-11-17:**
+
+| Repo | Dependências | CI | CD |
+|---|---|---|---|
+| `rag` | **4 fontes**: `pyproject.toml` + `uv.lock`, `requirements.txt`, `requirements-dev.txt` e `requirements-validation.lock` (snapshot de Python 3.14 num projeto que pede `<3.13`) | `uv sync` **sem `--locked`**, então o `uv.lock` pode ficar desatualizado sem ninguém notar; ruff + pytest em 3.11/3.12; `setup-uv@v3` desatualizado. O `Dockerfile` ignora o `uv.lock` (usa pip + `requirements.txt`) e só roda pytest | nenhum |
+| `agents` | `uv.lock` + DVC | **nenhum** (existem testes) | nenhum |
+| `docs` | `requirements.txt` com pip | build do MkDocs `--strict` | GitHub Pages ✅ |
+| `backend`, `frontend` | sem código | nenhum | nenhum |
+
+**Proposta (minhas decisões, para corrigir):**
+
+1. **O uv é o único gerenciador nos repos Python** (`rag` e `agents`, mais o `backend` se for Python). O `uv.lock` é commitado e é a única fonte de versões. No `rag`, saem `requirements*.txt` e `requirements-validation.lock`; quem precisar de `requirements.txt` gera com `uv export`. `[tool.uv] dev-dependencies` passa para `[dependency-groups]`.
+2. **A versão de Python é a mesma em todos os repos:** `.python-version` = 3.12 e `requires-python` compatível.
+3. **Workflows reutilizáveis no orquestrador**, para centralizar como as regras: `artemishub_orchestration/.github/workflows/python-ci.yml` (`on: workflow_call`). Cada repo filho tem um `ci.yml` de cerca de 5 linhas com `uses: ArtemisHubApp/artemishub_orchestration/.github/workflows/python-ci.yml@main`. Os repos são públicos, então a chamada entre repos funciona.
+4. **O que o `python-ci` checa em todo PR e push na `main`:**
+   - `uv lock --check`: o lock está em dia com o `pyproject`;
+   - `uv sync --locked`: instala exatamente o que está no lock;
+   - `ruff check` + `ruff format --check`;
+   - `pytest`, sem baixar modelo nem chamar LLM (o que precisar disso fica atrás de uma marca, rodando à parte);
+   - gitleaks.
+5. **Proteção da `main` em cada repo:** PR obrigatório, CI verde e 1 aprovação. Só alguém com acesso de admin à org consegue configurar isso.
+6. **Atualização de dependências:** Dependabot com `package-ecosystem: uv`, uma vez por semana e com PRs agrupados, para não inundar a equipe.
+7. **Dockerfile do `rag`:** passa a usar `uv sync --frozen` em vez de pip, para a imagem ter as mesmas versões do CI. A imagem passa a servir para rodar o RAG, não só os testes.
+8. **CD:** por enquanto só o deploy do `docs` no Pages, que já existe. Ainda não há onde publicar o app. O destino de deploy é decidido na semana 6, junto com o compose (seção 9).
+9. **`backend` e `frontend`:** o `ci.yml` entra junto com o primeiro scaffold de cada um. Se o frontend for Node, ganha um `node-ci.yml` reutilizável no mesmo molde (lockfile commitado, `npm ci`, lint e testes).
+10. Tudo isso entra como **PRs nos repos filhos**, um por repo, depois do orquestrador. Cada PR tem issue própria no kanban.
+
 ## 7. Deixado para quem constrói
 
 - O texto exato do `AGENTS.md` e da skill `artemis-sdd`, seguindo 6.2 e 6.3.
@@ -171,6 +201,7 @@ Todos os scripts são Python 3, só com a biblioteca padrão, e rodam igual em W
 - Editar um arquivo em `artemishub_rag/` dispara o aviso do hook uma vez.
 - Pedir "implementa X" leva o agente a criar ou pedir a issue e seguir a esteira de SDD na profundidade certa.
 - Existe uma única cópia das regras de SDD na org.
+- `rag` e `agents` usam o workflow reutilizável, com CI verde, `uv lock --check` passando e um só arquivo de dependências travadas (`uv.lock`).
 
 ## 9. Futuro (fora do escopo agora)
 
