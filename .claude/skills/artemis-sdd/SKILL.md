@@ -47,8 +47,9 @@ Exemplo: `python scripts/worktree.py new rag feat/20-ocr-diretrizes`. Tipos: `fe
 
 - **Spec e plano:** no **repo do submódulo** afetado, em `docs/superpowers/specs/` e
   `docs/superpowers/plans/`, versionados no mesmo PR. Nunca no orquestrador.
-- **ADR:** em `artemishub_docs/docs/arquitetura/decisoes/` (`NNNN-titulo.md`, formato MADR curto:
-  contexto, decisão, alternativas, consequências, status), quando a mudança altera arquitetura,
+- **ADR:** em `artemishub_docs/docs/adr/` (`NNN-titulo.md`, próximo número livre com 3 dígitos,
+  no formato do ADR-002: contexto, decisão, alternativas, consequências, status; nav do `mkdocs.yml`
+  e tabela de `docs/adr/index.md`), quando a mudança altera arquitetura,
   stack ou processo. Na etapa de spec, lembre disso: proponha o rascunho e a equipe aprova no PR.
 - **Código limpo e arquitetura:** siga `references/codigo-limpo.md`.
 

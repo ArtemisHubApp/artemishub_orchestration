@@ -93,3 +93,15 @@ def test_readme_docker_sem_make_e_prune_yes():
     ]:
         assert cmd in r, cmd
     assert "`make prune` já usa `--yes`" not in r
+
+
+def test_caminho_dos_adrs_e_o_real():
+    alvos = [
+        ROOT / "AGENTS.md",
+        ROOT / ".agents/skills/artemis-sdd/SKILL.md",
+        ROOT / ".claude/skills/artemis-sdd/SKILL.md",
+    ]
+    for f in alvos:
+        t = f.read_text(encoding="utf-8")
+        assert "arquitetura/decisoes" not in t, f
+        assert "artemishub_docs/docs/adr/" in t, f

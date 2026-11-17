@@ -83,7 +83,7 @@ Regras completas, com os 4 princípios (pense antes, simplicidade, mudança cir�
 
 ## Decisões (ADR)
 
-Toda decisão que muda arquitetura, stack ou processo gera um ADR em `artemishub_docs/docs/arquitetura/decisoes/` (`NNNN-titulo.md`, formato MADR curto: contexto, decisão, alternativas, consequências, status), no mesmo ciclo da mudança. O agente propõe o rascunho; a equipe aprova no PR. O orquestrador não guarda ADRs.
+Toda decisão que muda arquitetura, stack ou processo gera um ADR em `artemishub_docs/docs/adr/` (`NNN-titulo.md` com o próximo número livre, 3 dígitos, no formato do ADR-002: contexto, decisão, alternativas, consequências, status; entrada no `nav` do `mkdocs.yml` e na tabela de `docs/adr/index.md`), no mesmo ciclo da mudança. O agente propõe o rascunho; a equipe aprova no PR. O orquestrador não guarda ADRs.
 
 ## Kanban
 

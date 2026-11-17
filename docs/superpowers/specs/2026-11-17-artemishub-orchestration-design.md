@@ -219,7 +219,7 @@ Hoje nenhum repo tem um servidor de pé. O `rag` é uma CLI com Chroma embutido 
 
 Os READMEs dos repos já prometem "decisões registradas como ADR no `artemishub_docs`", mas a pasta ainda não existe.
 
-- **Pasta:** `artemishub_docs/docs/arquitetura/decisoes/`, com `index.md` (tabela de ADRs) e arquivos `NNNN-titulo.md` no formato MADR curto: contexto, decisão, alternativas, consequências e status. A seção entra no `nav` do `mkdocs.yml`, e o build `--strict` precisa passar.
+- **Pasta (corrigido em 17/11, Plano 2):** o `artemishub_docs` já tinha a seção `docs/adr/` (ADR-001 reservado para a stack, ADR-002 LangGraph). Os ADRs do orquestrador seguem essa convenção: `docs/adr/NNN-titulo.md`, 3 dígitos, **003 a 010**, no formato do ADR-002. ~~`docs/arquitetura/decisoes/` com `0001`–`0008`~~ (proposta original). A seção entra no `nav` do `mkdocs.yml`, e o build `--strict` precisa passar.
 - **ADRs iniciais**, nascidos deste design:
   - 0001: repo orquestrador com submódulos (abordagens A/B/C);
   - 0002: `AGENTS.md` como fonte única, para uma equipe que usa vários agentes;
@@ -314,7 +314,7 @@ origin/staging ──► worktree + branch feat/<issue>-<slug> ──► PR → 
 - Existe uma única cópia das regras de SDD na org: `rag` e `agents` sem pasta de skills, e o passo `no-local-skills` do CI ativo nos dois.
 - No Windows, só com Docker Desktop e git, `docker compose run --rm rag python -m src.query "..."` responde.
 - `python scripts/worktree.py new rag feat/1-teste` cria a worktree em `../artemishub-worktrees/` a partir de `origin/staging`, e um PR aberto dali vai para `staging` por padrão.
-- Os ADRs 0001 a 0008 aparecem no site do `artemishub_docs`.
+- Os ADRs 003 a 010 aparecem no site do `artemishub_docs` (`docs/adr/`).
 - `rag` e `agents` usam o workflow reutilizável, com CI verde, `uv lock --check` passando e um só arquivo de dependências travadas (`uv.lock`).
 
 ## 9. Futuro (fora do escopo agora)
