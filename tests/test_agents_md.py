@@ -86,8 +86,8 @@ def test_mudancas_no_orquestrador_e_ponteiros_de_submodulo():
 def test_readme_docker_sem_make_e_prune_yes():
     r = _readme()
     for cmd in [
-        'docker compose run --rm rag uv run python -m src.query "',
-        "docker compose run --rm rag uv run python -m src.demo",
+        'docker compose run --rm rag uv run python -m artemis_rag.query "',
+        "docker compose run --rm rag uv run python -m artemis_rag.demo",
         "docker compose run --rm rag uv run pytest -q",
         "make prune-yes",
     ]:

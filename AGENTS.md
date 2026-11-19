@@ -14,7 +14,7 @@ Plataforma que usa IA para apoiar mulheres em STEM com análise de currículo, i
 | `artemishub_frontend` | Interface web | a definir | sem scaffold |
 | `artemishub_backend` | API, regras de negócio, autenticação | a definir | sem scaffold |
 | `artemishub_agents` | Sistema multiagentes LLM e modelos de ML | Python 3.12+, uv, DVC | `uv run pytest` |
-| `artemishub_rag` | Base de conhecimento com citações | Python 3.11/3.12, ChromaDB, uv | `python -m src.demo` e `python -m src.query "<pergunta>"` (com `uv run` na frente) |
+| `artemishub_rag` | Base de conhecimento com citações | Python 3.11 a 3.13, ChromaDB, uv | `python -m artemis_rag.demo` e `python -m artemis_rag.query "<pergunta>"` (com `uv run` na frente) |
 
 Fluxo dos dados: frontend → backend → agents → rag.
 
