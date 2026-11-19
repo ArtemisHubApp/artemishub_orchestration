@@ -59,8 +59,8 @@ Sem Python, uv nem torch na máquina: só o Docker. `docker compose run --rm rag
 
 | Comando (funciona em qualquer sistema, inclusive Windows) | Atalho `make` | O que faz |
 |---|---|---|
-| `docker compose run --rm rag uv run python -m src.query "pergunta"` | `make rag-query Q="pergunta"` | Consulta o RAG |
-| `docker compose run --rm rag uv run python -m src.demo` | `make rag-demo` | Roda a demo do RAG |
+| `docker compose run --rm rag uv run python -m artemis_rag.query "pergunta"` | `make rag-query Q="pergunta"` | Consulta o RAG |
+| `docker compose run --rm rag uv run python -m artemis_rag.demo` | `make rag-demo` | Roda a demo do RAG |
 | `docker compose run --rm rag uv run pytest -q` (ou `agents`) | `make test-rag` / `make test-agents` | Roda os testes do serviço |
 | `docker compose run --rm rag sh` (ou `agents`) | `make shell-rag` / `make shell-agents` | Abre um shell no serviço |
 | - | `make help` | Lista todos os atalhos |

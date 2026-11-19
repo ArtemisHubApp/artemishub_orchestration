@@ -19,7 +19,7 @@ services:
     env_file:
       - path: ./artemishub_rag/.env
         required: false
-    command: ["uv", "run", "python", "-m", "src.query", "--help"]
+    command: ["uv", "run", "python", "-m", "artemis_rag.query", "--help"]
 
   agents:
     <<: *uv-service
