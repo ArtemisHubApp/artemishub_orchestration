@@ -71,6 +71,7 @@ Os nomes das opções mudam entre versões: confira a opção na documentação 
 4. PR pequeno, idealmente abaixo de uns 400 linhas alteradas (sem lockfiles e dados). Abra como draft enquanto estiver em andamento.
 5. Nunca `push --force` em `staging` ou `main`, nunca commitar `.env`, dados pessoais reais ou arquivos grandes fora do DVC.
 6. Depois do merge, apague a branch e a worktree: `python scripts/worktree.py prune --yes` (sem `--yes` é só um ensaio; worktree sem commit próprio nunca é removida). Faxina de branches antigas: `python scripts/branches.py`.
+7. Formulários de issue, template de PR e labels padrão vêm do repo da org `ArtemisHubApp/.github`; não crie cópias nos repos. Sincronize as labels com `python3 scripts/labels.py --apply` a partir de um clone dele (sem `--apply` é só um ensaio).
 
 ## Código limpo
 
