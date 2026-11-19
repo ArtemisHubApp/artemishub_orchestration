@@ -114,3 +114,8 @@ def test_caminho_dos_adrs_e_o_real():
         t = f.read_text(encoding="utf-8")
         assert "arquitetura/decisoes" not in t, f
         assert "artemishub_docs/docs/adr/" in t, f
+
+
+def test_higiene_cita_o_repo_github_da_org():
+    t = _agents()
+    assert "ArtemisHubApp/.github" in t and "labels.py" in t
