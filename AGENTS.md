@@ -33,7 +33,7 @@ Inegociáveis. Antes de qualquer tarefa, abra `.agents/skills/artemis-sdd/SKILL.
 3. Spec e plano ficam no repo do submódulo afetado, em `docs/superpowers/specs/` e `docs/superpowers/plans/`, no mesmo PR. Nunca aqui.
 4. Teste antes do código quando o comportamento muda.
 5. PR com `Closes #<nº>`, revisado por outra integrante.
-6. **Docs sempre atualizadas** quando algo relevante muda (comportamento, comando, configuração, arquitetura, dependência): README e `AGENTS.md` do repo, `artemishub_docs` e ADR quando couber, no mesmo PR. PR que muda algo relevante sem tocar em doc diz por quê na descrição.
+6. **Docs sempre atualizadas** quando algo relevante muda (comportamento, comando, configuração, arquitetura, dependência): README e `AGENTS.md` do repo, `artemishub_docs` e ADR quando couber, no mesmo PR. Isso inclui o **site no GitHub Pages**: se a mudança altera algo que o site descreve (arquitetura, RAG, como trabalhamos, guias), abra também um PR no `artemishub_docs` atualizando a página, e cite os dois PRs um no outro. O site publica a partir da `main` do `docs`. PR que muda algo relevante sem tocar em doc diz por quê na descrição.
 7. **Skills só no orquestrador.** Repo filho não guarda cópia de skills. Skill nova ou alterada é PR aqui. A fonte editável da `artemis-sdd` é `.agents/skills/artemis-sdd/`; depois de editar, rode `python scripts/sync_skills.py`.
 
 Skills disponíveis (`.agents/skills/`): `artemis-sdd`, `brainstorming`, `writing-plans`, `test-driven-development`, `subagent-driven-development`, `executing-plans`, `dispatching-parallel-agents`, `requesting-code-review`, `receiving-code-review`, `systematic-debugging`, `verification-before-completion`, `using-git-worktrees`, `finishing-a-development-branch`, `writing-skills`, `using-superpowers`, `diagnosing-superpowers`.
@@ -66,7 +66,7 @@ Os nomes das opções mudam entre versões: confira a opção na documentação 
 ## Higiene do GitHub
 
 1. Uma issue, uma branch, um PR. Renomeie branches de nome automático (`claude/...`, `codex/...`) antes de abrir o PR.
-2. Commits e título de PR em Conventional Commits (`feat:`, `fix:`, `chore:`, `docs:`, `refactor:`, `test:`, `ci:`), em português depois dos dois-pontos.
+2. Commits e título de PR em Conventional Commits (`feat:`, `fix:`, `chore:`, `docs:`, `refactor:`, `test:`, `ci:`; `release:` só no PR `staging → main`), em português depois dos dois-pontos.
 3. Merge: squash nos PRs para `staging`; a release `staging` → `main` usa merge commit, nunca squash.
 4. PR pequeno, idealmente abaixo de uns 400 linhas alteradas (sem lockfiles e dados). Abra como draft enquanto estiver em andamento.
 5. Nunca `push --force` em `staging` ou `main`, nunca commitar `.env`, dados pessoais reais ou arquivos grandes fora do DVC.
@@ -83,7 +83,7 @@ Regras completas, com os 4 princípios (pense antes, simplicidade, mudança cir�
 
 ## Decisões (ADR)
 
-Toda decisão que muda arquitetura, stack ou processo gera um ADR em `artemishub_docs/docs/arquitetura/decisoes/` (`NNNN-titulo.md`, formato MADR curto: contexto, decisão, alternativas, consequências, status), no mesmo ciclo da mudança. O agente propõe o rascunho; a equipe aprova no PR. O orquestrador não guarda ADRs.
+Toda decisão que muda arquitetura, stack ou processo gera um ADR em `artemishub_docs/docs/adr/` (`NNN-titulo.md` com o próximo número livre, 3 dígitos, no formato do ADR-002: contexto, decisão, alternativas, consequências, status; entrada no `nav` do `mkdocs.yml` e na tabela de `docs/adr/index.md`), no mesmo ciclo da mudança. O agente propõe o rascunho; a equipe aprova no PR. O orquestrador não guarda ADRs.
 
 ## Kanban
 
