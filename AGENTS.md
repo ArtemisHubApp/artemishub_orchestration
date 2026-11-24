@@ -88,7 +88,15 @@ Toda decisão que muda arquitetura, stack ou processo gera um ADR em `artemishub
 
 ## Kanban
 
-Toda issue, de qualquer repo, entra no mesmo GitHub Project: Backlog → Todo → In Progress → In Review → Testing → Done. Marque a Semana na issue, mova o card para In Progress ao começar e use `Closes #<nº>` no PR. Detalhes em [kanban.md](artemishub_docs/docs/guias/kanban.md).
+Toda issue, de qualquer repo, entra no mesmo quadro: <https://github.com/orgs/ArtemisHubApp/projects/1/views/2>. Colunas: Backlog → Ready Todo → In Progress → In Review → Testing → Done.
+
+Ao criar uma issue, inclua no quadro e confira se entrou (não conte com a inclusão automática):
+
+```
+gh project item-add 1 --owner ArtemisHubApp --url <URL da issue>
+```
+
+Marque a Semana no card, mova para In Progress ao começar e use `Closes #<nº>` no PR. Detalhes em [kanban.md](artemishub_docs/docs/guias/kanban.md).
 
 ## Segurança
 
