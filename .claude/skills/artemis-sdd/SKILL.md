@@ -27,7 +27,7 @@ produção) sobem o tamanho.
 
 Nada de código, doc ou configuração sem issue no kanban (rastreabilidade).
 
-- Sem issue, crie com `gh issue create` (no repo certo) ou peça o número antes de começar.
+- Sem issue, procure antes uma duplicata (`gh search issues --owner ArtemisHubApp "<palavras-chave>"`, abertas e fechadas) e use a existente. Só então crie com `gh issue create` (no repo certo) ou peça o número antes de começar.
 - Inclua a issue no quadro (`gh project item-add 1 --owner ArtemisHubApp --url <URL da issue>`) e marque a Semana no card.
 - Branch e PR carregam o número: `feat/<nº>-<slug>` e `Closes #<nº>` no PR.
 
