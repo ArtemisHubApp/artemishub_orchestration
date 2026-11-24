@@ -90,6 +90,16 @@ Toda decisão que muda arquitetura, stack ou processo gera um ADR em `artemishub
 
 Toda issue, de qualquer repo, entra no mesmo quadro: <https://github.com/orgs/ArtemisHubApp/projects/1/views/2>. Colunas: Backlog → Ready Todo → In Progress → In Review → Testing → Done.
 
+Antes de criar uma issue, procure duplicata em todos os repos, abertas e fechadas, com mais de uma palavra-chave (a tarefa pode estar em outro repo ou com outro nome):
+
+```
+gh search issues --owner ArtemisHubApp "<palavras-chave>"
+```
+
+- Se já existe uma aberta, use-a: comente o que faltar em vez de criar outra.
+- Se já existe uma fechada, leia-a antes: pode já estar pronta. Se for continuação, crie a nova e cite a antiga.
+- Em dúvida, pergunte antes de criar. Achou duplicata já criada? Avise as responsáveis; não feche issue de outra pessoa por conta própria.
+
 Ao criar uma issue, inclua no quadro e confira se entrou (não conte com a inclusão automática):
 
 ```
