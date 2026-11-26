@@ -11,8 +11,8 @@ Plataforma que usa IA para apoiar mulheres em STEM com análise de currículo, i
 | Pasta | Responsabilidade | Stack | Como rodar |
 |---|---|---|---|
 | `artemishub_docs` | Documentação, ADRs e kanban | MkDocs | `pip install -r requirements.txt` e `mkdocs serve` |
-| `artemishub_frontend` | Interface web | a definir | sem scaffold |
-| `artemishub_backend` | API, regras de negócio, autenticação | a definir | sem scaffold |
+| `artemishub_frontend` | Interface web | React 19, Vite, TypeScript, Tailwind 4 (em construção, [frontend#2](https://github.com/ArtemisHubApp/artemishub_frontend/issues/2)) | ver o README do repo |
+| `artemishub_backend` | API, contas, conversas e sessão | Python 3.12, FastAPI, Postgres 16, uv | `uv run pytest -q` (Docker ligado); para rodar, ver o README |
 | `artemishub_agents` | Sistema multiagentes LLM e modelos de ML | Python 3.12+, uv, DVC | `uv run pytest` |
 | `artemishub_rag` | Base de conhecimento com citações | Python 3.11 a 3.13, ChromaDB, uv | `python -m artemis_rag.demo` e `python -m artemis_rag.query "<pergunta>"` (com `uv run` na frente) |
 
@@ -22,7 +22,7 @@ Fluxo dos dados: frontend → backend → agents → rag.
 
 Quer mexer em `X`? Leia `X/AGENTS.md` (ou o `X/README.md`, se ainda não existir) antes. O PR vai para o repo do submódulo, nunca para o orquestrador (exceto regras, skills e scripts daqui). Em dúvida sobre o estado de um repo, rode `python scripts/status.py`.
 
-Mudança no próprio orquestrador (regras, skills, scripts): issue e branch `<tipo>/<nº>-<slug>` a partir de `main` neste repo, e PR para `main` (até o orquestrador ter `staging`).
+Mudança no próprio orquestrador (regras, skills, scripts): issue e branch `<tipo>/<nº>-<slug>` a partir de `staging` neste repo, e PR para `staging`.
 
 ## Regras de SDD
 

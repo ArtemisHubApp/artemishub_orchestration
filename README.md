@@ -5,8 +5,8 @@ Repo guarda-chuva do **Artemis** (Grupo 11, Residência de IA). Reúne os 5 repo
 | Pasta | O que é |
 |---|---|
 | `artemishub_docs` | Documentação, ADRs e kanban |
-| `artemishub_frontend` | Interface web (sem scaffold) |
-| `artemishub_backend` | API (sem scaffold) |
+| `artemishub_frontend` | Interface web (em construção) |
+| `artemishub_backend` | API: contas, conversas e sessão |
 | `artemishub_agents` | Multiagentes LLM e modelos de ML |
 | `artemishub_rag` | Base de conhecimento com citações |
 
