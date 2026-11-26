@@ -78,7 +78,7 @@ def test_primeiro_push_com_upstream_documentado():
 
 def test_mudancas_no_orquestrador_e_ponteiros_de_submodulo():
     t = _agents()
-    assert "Mudança no próprio orquestrador" in t and "a partir de `main`" in t
+    assert "Mudança no próprio orquestrador" in t and "a partir de `staging` neste repo, e PR para `staging`" in t
     cuidados = t.split("## Submódulos: cuidados")[1]
     assert "new commits" in cuidados and "git add -A" in cuidados
 
