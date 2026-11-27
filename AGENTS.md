@@ -103,11 +103,7 @@ gh search issues --owner ArtemisHubApp "<palavras-chave>"
 - Se já existe uma fechada, leia-a antes: pode já estar pronta. Se for continuação, crie a nova e cite a antiga.
 - Em dúvida, pergunte antes de criar. Achou duplicata já criada? Avise as responsáveis; não feche issue de outra pessoa por conta própria.
 
-Ao criar uma issue, inclua no quadro e confira se entrou (não conte com a inclusão automática):
-
-```
-gh project item-add 1 --owner ArtemisHubApp --url <URL da issue>
-```
+Toda issue aberta entra no quadro **sozinha**, pelo workflow `Quadro` deste repo (a cada 30 minutos). Precisa dela no quadro agora? Rode `gh project item-add 1 --owner ArtemisHubApp --url <URL da issue>` ou dispare o workflow `Quadro` (Actions → Quadro → Run workflow, com a URL); um agente sem acesso ao Projects, como uma sessão na nuvem, também pode disparar o workflow.
 
 Marque a Semana no card, mova para In Progress ao começar e use `Closes #<nº>` no PR.
 
@@ -118,7 +114,7 @@ Padrão de toda issue (é o que os formulários do repo `.github` produzem):
 - **Labels** `tipo: …`, `semana-N` e `prioridade: alta|média|baixa`.
 - **Responsável** pelo papel de cada uma na [página da equipe](artemishub_docs/docs/sobre/equipe.md): dados e DevOps (Camila), arquitetura e engenharia de software (Amanda), ciência de dados (Ana Julia), ciência de dados e arquitetura (Eduarda).
 
-Agente sem acesso ao Projects (por exemplo, numa sessão na nuvem) cria a issue e entrega à pessoa o comando `gh project item-add` pronto; a tarefa só termina quando a issue está no quadro. Para dar o acesso no seu computador: `gh auth refresh -s project`. Detalhes em [kanban.md](artemishub_docs/docs/guias/kanban.md).
+O workflow usa o secret da org `ADD_TO_PROJECT_PAT` (token com Projects: Read and write). Se ele vencer, as issues param de entrar: gere outro e troque o secret. Detalhes em [kanban.md](artemishub_docs/docs/guias/kanban.md).
 
 ## IA e dados
 

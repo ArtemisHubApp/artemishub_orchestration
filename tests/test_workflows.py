@@ -126,3 +126,18 @@ def test_snippet_do_chamador_tem_permissions_e_edited():
     cab = (WF / "python-ci.yml").read_text(encoding="utf-8").split("name: Python CI")[0]
     assert "permissions: { contents: read, pull-requests: read }" in cab
     assert "edited" in cab
+
+
+def test_quadro_inclui_issues_da_org():
+    """Toda issue aberta da org entra no quadro, por agenda ou disparo manual, sem token no código."""
+    wf = load("quadro.yml")
+    g = gatilhos(wf)
+    assert "schedule" in g and "urls" in g["workflow_dispatch"]["inputs"]
+    assert wf["permissions"] == {"contents": "read"}
+    passo = wf["jobs"]["incluir"]["steps"][0]
+    assert passo["env"]["GH_TOKEN"] == "${{ secrets.ADD_TO_PROJECT_PAT }}"
+    r = passo["run"]
+    assert "gh project item-add 1 --owner ArtemisHubApp" in r
+    assert "--state open" in r
+    # A entrada do disparo manual chega por variável de ambiente, nunca interpolada no script.
+    assert "${{" not in r

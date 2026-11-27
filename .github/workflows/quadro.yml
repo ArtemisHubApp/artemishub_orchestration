@@ -1,0 +1,56 @@
+# Coloca no quadro (Project 1 da org) toda issue aberta que ainda não está lá.
+# Roda a cada 30 minutos e por disparo manual. Incluir uma issue que já está no quadro não muda nada.
+# Precisa do secret da org ADD_TO_PROJECT_PAT: token fine-grained com Projects: Read and write.
+name: Quadro
+
+on:
+  schedule:
+    - cron: "7,37 * * * *"
+  workflow_dispatch:
+    inputs:
+      urls:
+        description: "URLs de issues, separadas por espaço. Vazio: todas as issues abertas da org."
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+
+concurrency:
+  group: quadro
+  cancel-in-progress: false
+
+jobs:
+  incluir:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Incluir issues no quadro
+        env:
+          GH_TOKEN: ${{ secrets.ADD_TO_PROJECT_PAT }}
+          URLS: ${{ inputs.urls }}
+        run: |
+          set -euo pipefail
+          if [ -z "${GH_TOKEN:-}" ]; then
+            echo "::error::Falta o secret ADD_TO_PROJECT_PAT na organização."
+            exit 1
+          fi
+          if [ -z "${URLS:-}" ]; then
+            URLS=$(gh search issues --owner ArtemisHubApp --state open --limit 1000 --json url --jq '.[].url')
+          fi
+          padrao='^https://github\.com/ArtemisHubApp/[A-Za-z0-9._-]+/issues/[0-9]+$'
+          total=0; falhas=0
+          for url in $URLS; do
+            if [[ ! "$url" =~ $padrao ]]; then
+              echo "::warning::Ignorado, não é issue da org: $url"
+              continue
+            fi
+            if gh project item-add 1 --owner ArtemisHubApp --url "$url" > /dev/null; then
+              total=$((total + 1))
+            else
+              falhas=$((falhas + 1))
+              echo "::warning::Não consegui incluir $url"
+            fi
+          done
+          echo "Issues no quadro: $total. Falhas: $falhas."
+          [ "$falhas" -eq 0 ]
