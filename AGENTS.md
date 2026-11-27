@@ -43,7 +43,7 @@ Skills disponíveis (`.agents/skills/`): `artemis-sdd`, `brainstorming`, `writin
 
 ## Branches e worktrees
 
-Todo trabalho nasce numa worktree com branch própria, criada a partir de `origin/staging`. Todos os repos têm `staging`, que é a branch padrão: o PR vai para `staging`, sempre revisado, e a `main` (produção; o site do docs publica a partir dela) só recebe o PR `release: <data>` de `staging` para `main`, com merge commit. Depois do release, crie a release no GitHub com a tag `vAAAA.MM.DD` apontando para a `main`.
+Todo trabalho nasce numa worktree com branch própria, criada a partir de `origin/staging`. Todos os repos têm `staging`, que é a branch padrão: o PR vai para `staging`, sempre revisado, e a `main` (produção; o site do docs publica a partir dela) só recebe o PR `release: <data>` de `staging` para `main`, com merge commit. Ao mesclar o release, o workflow `Release` cria sozinho a tag e a release no GitHub, apontando para a `main` (regras em Higiene do GitHub, item 8); também dá para dispará-lo à mão (Actions → Release).
 
 ```
 python scripts/worktree.py new <repo> <tipo>/<nº>-<slug>
@@ -75,6 +75,10 @@ Os nomes das opções mudam entre versões: confira a opção na documentação 
 5. Nunca `push --force` em `staging` ou `main`, nunca commitar `.env`, dados pessoais reais ou arquivos grandes fora do DVC.
 6. Depois do merge, apague a branch e a worktree: `python scripts/worktree.py prune --yes` (sem `--yes` é só um ensaio; worktree sem commit próprio nunca é removida). Faxina de branches antigas: `python scripts/branches.py`.
 7. Formulários de issue, template de PR e labels padrão vêm do repo da org `ArtemisHubApp/.github`; não crie cópias nos repos. Sincronize as labels com `python3 scripts/labels.py --apply` a partir de um clone dele (sem `--apply` é só um ensaio).
+8. **Releases em SemVer** ([ADR-013](artemishub_docs/docs/adr/013-semver-e-releases.md)), iguais nos 6 repos, criadas pelo workflow reutilizável `release-reutilizavel.yml` deste repo:
+   - **Tag** `vX.Y.Z`, começando em `v0.1.0`. A versão sai dos títulos dos PRs desde a release anterior: `feat!:` ou `BREAKING CHANGE` sobe o major (antes da `1.0.0`, o minor); algum `feat:` sobe o minor; o resto, o patch. Por isso o título do PR em Conventional Commits importa.
+   - **Nome** `vX.Y.Z · <tema>`, com o tema do título do PR de release (`release: <tema>`, por exemplo `release: currículo por PDF ou foto`).
+   - **Notas** geradas por seção (Novidades, Correções, Documentação, CI e manutenção), cada linha com o PR e a autora, e o link de comparação com a versão anterior. Não edite à mão; se faltar algo, corrija o título do PR.
 
 ## Código limpo
 

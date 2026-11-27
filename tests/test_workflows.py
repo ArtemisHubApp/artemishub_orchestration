@@ -144,3 +144,28 @@ def test_quadro_inclui_issues_da_org():
     assert "--state closed" in r and "item-edit" in r and '"Done"' in r
     # A entrada do disparo manual chega por variável de ambiente, nunca interpolada no script.
     assert "${{" not in r
+
+
+def test_release_usa_o_reutilizavel_em_semver():
+    """Merge de PR `release:` na main (ou disparo manual) chama o workflow reutilizável de release."""
+    wf = load("release.yml")
+    g = gatilhos(wf)
+    assert g["push"]["branches"] == ["main"] and "workflow_dispatch" in g
+    assert wf["permissions"] == {"contents": "write", "pull-requests": "read"}
+    job = wf["jobs"]["release"]
+    assert "release:" in job["if"]
+    assert job["uses"] == "./.github/workflows/release-reutilizavel.yml"
+
+
+def test_release_reutilizavel_cria_tag_semver_com_nome_e_notas():
+    wf = load("release-reutilizavel.yml")
+    inputs = gatilhos(wf)["workflow_call"]["inputs"]
+    assert set(inputs) == {"versao", "alvo", "titulo_release", "ref_scripts"}
+    assert inputs["ref_scripts"]["default"] == "main"
+    job = wf["jobs"]["release"]
+    assert "ArtemisHubApp/artemishub_orchestration" in str(job["steps"][1])
+    r = runs(job)
+    assert "scripts/release.py" in r and "gh release create" in r
+    assert '--target "$alvo"' in r and '--title "$nome"' in r and "--notes-file notas.md" in r
+    assert r"^v[0-9]+\.[0-9]+\.[0-9]+$" in r  # só tags SemVer contam como release anterior
+    assert "${{" not in r
