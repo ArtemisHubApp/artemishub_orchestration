@@ -75,9 +75,7 @@ def test_notas_agrupam_por_tipo_e_ignoram_releases():
     assert "#27" not in texto  # o próprio PR de release não entra
     # Ordem dentro da seção: número do PR crescente.
     assert texto.index("(#18)") < texto.index("(#22)")
-    assert texto.rstrip().endswith(
-        f"**Comparação completa:** https://github.com/{REPO}/compare/v0.1.0...v0.2.0"
-    )
+    assert texto.rstrip().endswith(f"**Comparação completa:** https://github.com/{REPO}/compare/v0.1.0...v0.2.0")
 
 
 def test_notas_da_primeira_release_sem_comparacao_e_sem_secao_vazia():
