@@ -137,7 +137,10 @@ def test_quadro_inclui_issues_da_org():
     passo = wf["jobs"]["incluir"]["steps"][0]
     assert passo["env"]["GH_TOKEN"] == "${{ secrets.ADD_TO_PROJECT_PAT }}"
     r = passo["run"]
-    assert "gh project item-add 1 --owner ArtemisHubApp" in r
+    assert "org=ArtemisHubApp" in r and 'gh project item-add 1 --owner "$org"' in r
     assert "--state open" in r
+    # Fechadas só no disparo manual, e entram no quadro já em Done.
+    assert g["workflow_dispatch"]["inputs"]["incluir_fechadas"]["type"] == "boolean"
+    assert "--state closed" in r and "item-edit" in r and '"Done"' in r
     # A entrada do disparo manual chega por variável de ambiente, nunca interpolada no script.
     assert "${{" not in r
