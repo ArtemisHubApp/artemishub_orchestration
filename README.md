@@ -10,6 +10,8 @@ Repo guarda-chuva do **Artemis** (Grupo 11, Residência de IA). Reúne os 5 repo
 | `artemishub_agents` | Multiagentes LLM e modelos de ML |
 | `artemishub_rag` | Base de conhecimento com citações |
 
+**Arquitetura:** a decisão de implantação e dos pipelines de dados está no [ADR-012](https://artemishubapp.github.io/artemishub_docs/adr/012-implantacao-e-pipelines-de-dados/), e os diagramas (contexto, containers, componentes, implantação e a sequência de uma pergunta) estão nas [Visões C4](https://artemishubapp.github.io/artemishub_docs/arquitetura/visoes-c4/). Toda a documentação, com o PDR e os ADRs, fica no [site do projeto](https://artemishubapp.github.io/artemishub_docs/).
+
 ## Primeiro uso
 
 Precisa de Git e Python 3.11 ou mais novo (só biblioteca padrão; funciona em Windows, macOS e Linux).
@@ -29,7 +31,7 @@ Abra a pasta no seu agente (Claude Code, Codex, Gemini CLI). Ele lê o `AGENTS.m
 | `python scripts/setup.py` | `make setup` | Baixa os submódulos e deixa cada um na branch base |
 | `python scripts/sync.py` | `make sync` | Atualiza os submódulos sem descartar mudanças locais |
 | `python scripts/status.py` | `make status` | Mostra branch, mudanças, adiantamento e worktrees de cada repo |
-| `python scripts/worktree.py new <repo> <tipo>/<nº>-<slug>` | `make worktree REPO=<repo> BRANCH=<tipo>/<nº>-<slug>` | Cria uma worktree a partir da branch base (`staging` aqui; `main` nos repos filhos, que ainda não têm `staging`) |
+| `python scripts/worktree.py new <repo> <tipo>/<nº>-<slug>` | `make worktree REPO=<repo> BRANCH=<tipo>/<nº>-<slug>` | Cria uma worktree a partir de `origin/staging` |
 | `python scripts/worktree.py list` | - | Lista as worktrees |
 | `python scripts/worktree.py prune` | `make prune` | Ensaio: mostra as worktrees de branches já mergeadas que seriam removidas |
 | `python scripts/worktree.py prune --yes` | `make prune-yes` | Remove essas worktrees (nunca uma sem commit próprio ou com mudanças) |
@@ -38,10 +40,23 @@ Abra a pasta no seu agente (Claude Code, Codex, Gemini CLI). Ele lê o `AGENTS.m
 
 ## Como trabalhar
 
-1. Toda tarefa tem uma issue no kanban.
+1. Toda tarefa tem uma issue no [quadro](https://github.com/orgs/ArtemisHubApp/projects/1/views/2). Use os formulários de issue (o padrão está no `AGENTS.md`, seção Kanban). A issue entra no quadro sozinha pelo workflow `Quadro` (ver abaixo).
 2. Crie a worktree: `python scripts/worktree.py new rag feat/20-ocr-diretrizes`.
-3. Trabalhe lá, com o agente seguindo o `AGENTS.md` (veja abaixo como abrir o agente). No primeiro push, publique a branch com `git push -u origin <tipo>/<nº>-<slug>` e abra o PR para a branch base (`staging` neste repo, `main` nos repos filhos) com `Closes #<nº>`.
+3. Trabalhe lá, com o agente seguindo o `AGENTS.md` (veja abaixo como abrir o agente). No primeiro push, publique a branch com `git push -u origin <tipo>/<nº>-<slug>` e abra o PR para `staging` com `Closes #<nº>`.
 4. Depois do merge, `python scripts/worktree.py prune --yes` (sem `--yes` é um ensaio que só lista).
+
+## Branches e release
+
+Todos os repos têm `staging`, que é a branch padrão; a `main` é produção (o site do docs publica a partir dela). Os PRs vão para `staging` com squash. Quando a `staging` estiver estável, abra o PR `release: <data>` de `staging` para `main` e mescle com **merge commit**. Depois, crie a release no GitHub com a tag `vAAAA.MM.DD` apontando para a `main`.
+
+## Workflows deste repo
+
+| Workflow | Quando roda | O que faz |
+|---|---|---|
+| `CI` | PRs e pushes | Testes do orquestrador e validação das skills |
+| `Gitleaks` | PRs e pushes | Procura segredos commitados |
+| `Python CI` | chamado pelos repos filhos | CI reutilizável: lint, testes, título do PR, sem cópia de skills |
+| `Quadro` | a cada 30 minutos e à mão | Inclui no quadro as issues abertas da org; à mão, com `incluir_fechadas`, inclui também as fechadas em Done. Usa o secret da org `ADD_TO_PROJECT_PAT` |
 
 ## Como abrir o agente numa tarefa
 
@@ -55,7 +70,7 @@ As opções mudam entre versões: confira a opção na documentação da sua ver
 
 ## Docker (opcional)
 
-Sem Python, uv nem torch na máquina: só o Docker. `docker compose run --rm rag` e `docker compose run --rm agents` usam a pasta do submódulo como volume. `backend` e `frontend` ficam no profile `app` até terem scaffold.
+Sem Python, uv nem torch na máquina: só o Docker. `docker compose run --rm rag` e `docker compose run --rm agents` usam a pasta do submódulo como volume. `backend` e `frontend` ficam no profile `app` até o compose do sistema completo ([backend#11](https://github.com/ArtemisHubApp/artemishub_backend/issues/11)); por enquanto, rode-os como explica o README de cada um.
 
 | Comando (funciona em qualquer sistema, inclusive Windows) | Atalho `make` | O que faz |
 |---|---|---|

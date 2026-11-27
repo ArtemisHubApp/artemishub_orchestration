@@ -43,7 +43,7 @@ Skills disponíveis (`.agents/skills/`): `artemis-sdd`, `brainstorming`, `writin
 
 ## Branches e worktrees
 
-Todo trabalho nasce numa worktree com branch própria, criada a partir da branch base do repo. Neste orquestrador a base é `staging`: o PR vai para `staging`, e a `main` só recebe o PR `release: <data>` de `staging` para `main`. **Os repos filhos ainda não têm `staging`**: neles a base é a `main`, e o PR vai direto para ela, sempre revisado.
+Todo trabalho nasce numa worktree com branch própria, criada a partir de `origin/staging`. Todos os repos têm `staging`, que é a branch padrão: o PR vai para `staging`, sempre revisado, e a `main` (produção; o site do docs publica a partir dela) só recebe o PR `release: <data>` de `staging` para `main`, com merge commit. Depois do release, crie a release no GitHub com a tag `vAAAA.MM.DD` apontando para a `main`.
 
 ```
 python scripts/worktree.py new <repo> <tipo>/<nº>-<slug>
@@ -87,7 +87,7 @@ Regras completas, com os 4 princípios (pense antes, simplicidade, mudança cir�
 
 ## Decisões (ADR)
 
-Toda decisão que muda arquitetura, stack ou processo gera um ADR em `artemishub_docs/docs/adr/` (`NNN-titulo.md` com o próximo número livre, 3 dígitos, no formato do ADR-002: contexto, decisão, alternativas, consequências, status; entrada no `nav` do `mkdocs.yml` e na tabela de `docs/adr/index.md`), no mesmo ciclo da mudança. O agente propõe o rascunho; a equipe aprova no PR. O orquestrador não guarda ADRs.
+Toda decisão que muda arquitetura, stack ou processo gera um ADR em `artemishub_docs/docs/adr/` (`NNN-titulo.md` com o próximo número livre, 3 dígitos, no formato do ADR-002: contexto, decisão, alternativas, consequências, status; entrada no `nav` do `mkdocs.yml` e na tabela de `docs/adr/index.md`), no mesmo ciclo da mudança. O agente propõe o rascunho; a equipe aprova no PR. Quando o PR do ADR é aprovado, o status passa de "proposto" para "aceito" **no mesmo PR**, no arquivo e na tabela de `docs/adr/index.md`; um ADR substituído fica "substituído pelo ADR-NNN". O orquestrador não guarda ADRs.
 
 ## Kanban
 
@@ -103,13 +103,18 @@ gh search issues --owner ArtemisHubApp "<palavras-chave>"
 - Se já existe uma fechada, leia-a antes: pode já estar pronta. Se for continuação, crie a nova e cite a antiga.
 - Em dúvida, pergunte antes de criar. Achou duplicata já criada? Avise as responsáveis; não feche issue de outra pessoa por conta própria.
 
-Ao criar uma issue, inclua no quadro e confira se entrou (não conte com a inclusão automática):
+Toda issue aberta entra no quadro **sozinha**, pelo workflow `Quadro` deste repo (a cada 30 minutos). Precisa dela no quadro agora? Rode `gh project item-add 1 --owner ArtemisHubApp --url <URL da issue>` ou dispare o workflow `Quadro` (Actions → Quadro → Run workflow, com a URL); um agente sem acesso ao Projects, como uma sessão na nuvem, também pode disparar o workflow.
 
-```
-gh project item-add 1 --owner ArtemisHubApp --url <URL da issue>
-```
+Marque a Semana no card, mova para In Progress ao começar e use `Closes #<nº>` no PR.
 
-Marque a Semana no card, mova para In Progress ao começar e use `Closes #<nº>` no PR. Detalhes em [kanban.md](artemishub_docs/docs/guias/kanban.md).
+Padrão de toda issue (é o que os formulários do repo `.github` produzem):
+
+- **Título** com o prefixo do formulário: `feat:`, `fix:`, `chore:` ou `docs:`, em português depois dos dois-pontos.
+- **Corpo** com as seções do formulário (por exemplo: o que resolve, o que fica de fora, critérios de aceite, semana, repositório afetado).
+- **Labels** `tipo: …`, `semana-N` e `prioridade: alta|média|baixa`.
+- **Responsável** pelo papel de cada uma na [página da equipe](artemishub_docs/docs/sobre/equipe.md): dados e DevOps (Camila), arquitetura e engenharia de software (Amanda), ciência de dados (Ana Julia), ciência de dados e arquitetura (Eduarda).
+
+O workflow usa o secret da org `ADD_TO_PROJECT_PAT` (token com Projects: Read and write). Se ele vencer, as issues param de entrar: gere outro e troque o secret. Detalhes em [kanban.md](artemishub_docs/docs/guias/kanban.md).
 
 ## IA e dados
 

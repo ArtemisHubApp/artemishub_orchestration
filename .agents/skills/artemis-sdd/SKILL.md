@@ -41,7 +41,8 @@ Na dúvida, escolha o risco maior. Baixar o risco depois exige concordância da 
 Nada de código, doc ou configuração sem issue no kanban (rastreabilidade).
 
 - Sem issue, procure antes uma duplicata (`gh search issues --owner ArtemisHubApp "<palavras-chave>"`, abertas e fechadas) e use a existente. Só então crie com `gh issue create` (no repo certo) ou peça o número antes de começar.
-- Inclua a issue no quadro (`gh project item-add 1 --owner ArtemisHubApp --url <URL da issue>`) e marque a Semana no card.
+- Siga o padrão de issue do `AGENTS.md` (seção Kanban): título com o prefixo do formulário, corpo com as seções dele, labels `tipo:`, `semana-N` e `prioridade:` e responsável pelo papel.
+- A issue entra no quadro sozinha (workflow `Quadro` do orquestrador, a cada 30 minutos). Para incluir na hora, dispare o workflow com a URL ou rode `gh project item-add 1 --owner ArtemisHubApp --url <URL da issue>`. Depois, marque a Semana no card.
 - Branch e PR carregam o número: `feat/<nº>-<slug>` e `Closes #<nº>` no PR.
 
 ## 3. Worktree, nunca direto na `staging` ou `main`
@@ -51,12 +52,11 @@ python scripts/worktree.py new <repo> <tipo>/<nº>-<slug>
 ```
 
 Exemplo: `python scripts/worktree.py new rag feat/20-ocr-diretrizes`. Tipos: `feat`, `fix`,
-`chore`, `docs`, `refactor`, `test`, `ci`. A worktree nasce da branch base do repo e fica em
-`../artemishub-worktrees/<repo>/<branch>/`. No orquestrador a base é `staging` e o PR vai para
-`staging`; os repos filhos ainda não têm `staging`, então neles a base é a `main` e o PR vai para
-a `main`, sempre revisado. Nunca commite direto em `staging` nem em `main`. O checkout local do
-submódulo pode estar atrasado: use `git fetch` e `git show origin/<base>:<arquivo>` para ver o
-estado real.
+`chore`, `docs`, `refactor`, `test`, `ci`. A worktree nasce de `origin/staging`, fica em
+`../artemishub-worktrees/<repo>/<branch>/` e o PR vai para `staging` (todos os repos têm
+`staging`; a `main` só recebe o release). Nunca commite direto em `staging` nem em `main`. O
+checkout local do submódulo pode estar atrasado: use `git fetch` e
+`git show origin/staging:<arquivo>` para ver o estado real.
 
 ## 4. Onde salvar cada coisa
 
@@ -80,10 +80,10 @@ um no outro. Se o PR não mexeu em doc, a descrição diz por quê.
 
 - [ ] `Closes #<nº>` na descrição e a branch com o número da issue
 - [ ] Título no padrão Conventional Commits (`feat: ...`, `fix: ...`)
-- [ ] Alvo é a branch base (`staging` no orquestrador, `main` nos repos filhos); revisão de outra integrante
+- [ ] Alvo é `staging`; revisão de outra integrante
 - [ ] Testes escritos antes do código e passando (quando o comportamento mudou)
 - [ ] Docs atualizadas, ou a descrição explica por que não
-- [ ] ADR criado ou proposto, se mudou arquitetura, stack ou processo
+- [ ] ADR criado ou proposto, se mudou arquitetura, stack ou processo; ADR aprovado no PR passa para "aceito" no mesmo PR
 - [ ] Revisado contra `references/codigo-limpo.md`
 - [ ] Mudou uma fronteira entre repos? Schema em `contratos/` atualizado e teste de contrato nos dois lados
 - [ ] Mudou agente, prompt ou RAG? Golden set e avaliação rodados, resultado citado no PR; prompt alterado no Langfuse, não no código
