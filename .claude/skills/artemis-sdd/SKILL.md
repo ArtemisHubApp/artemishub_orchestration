@@ -20,15 +20,28 @@ Diga a classificação e o porquê numa linha antes de começar.
 | **S1** | Mudança pequena e clara, sem decisão de design | Plano curto com critérios de aceite; teste antes do código se o comportamento mudar. |
 | **S2/S3** | Funcionalidade nova, mudança que cruza módulos, risco alto ou decisão de arquitetura | Fluxo completo do Superpowers: `brainstorming` → spec → `writing-plans` → `test-driven-development` → `subagent-driven-development` ou `executing-plans` → `requesting-code-review` → `finishing-a-development-branch`. |
 
-Na dúvida entre dois tamanhos, escolha o maior. Complexidade e risco (dados pessoais, segurança,
+Na dúvida entre dois tamanhos, escolha o maior. Complexidade e risco (dados pessoais, segurança, contrato entre repositórios, comportamento da IA visível à usuária,
 produção) sobem o tamanho.
+
+### Risco (R0 a R3): profundidade da revisão
+
+Tamanho e risco são independentes: um diff pequeno não é prova de segurança. Diga os dois.
+
+| Risco | Quando | Revisão |
+|---|---|---|
+| **R0** | Documentação ou mudança mecânica, sem efeito no comportamento | revisão normal do PR |
+| **R1** | Comportamento interno, entradas confiáveis, reversível | revisão normal + testes |
+| **R2** | Dado de fora (upload de currículo, texto da usuária, documento do RAG), parsing, prompt ou comportamento da IA visível à usuária, contrato entre repositórios | revisão de outra integrante focada no risco; avaliação ou teste de contrato citados no PR |
+| **R3** | Autenticação, sessão, segredos, dados pessoais (LGPD), migração de banco irreversível, deploy | duas revisoras, ou uma revisora mais o `requesting-code-review`; plano de rollback no PR |
+
+Na dúvida, escolha o risco maior. Baixar o risco depois exige concordância da equipe no PR.
 
 ## 2. Toda tarefa tem issue
 
 Nada de código, doc ou configuração sem issue no kanban (rastreabilidade).
 
-- Sem issue, crie com `gh issue create` (no repo certo) ou peça o número antes de começar.
-- Marque a semana na issue.
+- Sem issue, procure antes uma duplicata (`gh search issues --owner ArtemisHubApp "<palavras-chave>"`, abertas e fechadas) e use a existente. Só então crie com `gh issue create` (no repo certo) ou peça o número antes de começar.
+- Inclua a issue no quadro (`gh project item-add 1 --owner ArtemisHubApp --url <URL da issue>`) e marque a Semana no card.
 - Branch e PR carregam o número: `feat/<nº>-<slug>` e `Closes #<nº>` no PR.
 
 ## 3. Worktree, nunca direto na `staging` ou `main`
@@ -38,17 +51,20 @@ python scripts/worktree.py new <repo> <tipo>/<nº>-<slug>
 ```
 
 Exemplo: `python scripts/worktree.py new rag feat/20-ocr-diretrizes`. Tipos: `feat`, `fix`,
-`chore`, `docs`, `refactor`, `test`, `ci`. A worktree nasce de `origin/staging`, fica em
-`../artemishub-worktrees/<repo>/<branch>/` e o PR vai para `staging`. Nunca commite direto em
-`staging` nem em `main`. O checkout local do submódulo pode estar atrasado: use `git fetch` e
-`git show origin/staging:<arquivo>` para ver o estado real.
+`chore`, `docs`, `refactor`, `test`, `ci`. A worktree nasce da branch base do repo e fica em
+`../artemishub-worktrees/<repo>/<branch>/`. No orquestrador a base é `staging` e o PR vai para
+`staging`; os repos filhos ainda não têm `staging`, então neles a base é a `main` e o PR vai para
+a `main`, sempre revisado. Nunca commite direto em `staging` nem em `main`. O checkout local do
+submódulo pode estar atrasado: use `git fetch` e `git show origin/<base>:<arquivo>` para ver o
+estado real.
 
 ## 4. Onde salvar cada coisa
 
 - **Spec e plano:** no **repo do submódulo** afetado, em `docs/superpowers/specs/` e
   `docs/superpowers/plans/`, versionados no mesmo PR. Nunca no orquestrador.
-- **ADR:** em `artemishub_docs/docs/arquitetura/decisoes/` (`NNNN-titulo.md`, formato MADR curto:
-  contexto, decisão, alternativas, consequências, status), quando a mudança altera arquitetura,
+- **ADR:** em `artemishub_docs/docs/adr/` (`NNN-titulo.md`, próximo número livre com 3 dígitos,
+  no formato do ADR-002: contexto, decisão, alternativas, consequências, status; nav do `mkdocs.yml`
+  e tabela de `docs/adr/index.md`), quando a mudança altera arquitetura,
   stack ou processo. Na etapa de spec, lembre disso: proponha o rascunho e a equipe aprova no PR.
 - **Código limpo e arquitetura:** siga `references/codigo-limpo.md`.
 
@@ -56,17 +72,21 @@ Exemplo: `python scripts/worktree.py new rag feat/20-ocr-diretrizes`. Tipos: `fe
 
 Quando algo relevante muda (comportamento, comando, configuração, arquitetura, dependência),
 atualize **no mesmo PR**: README e `AGENTS.md` do repo, `artemishub_docs` e ADR quando couber.
-Se o PR não mexeu em doc, a descrição diz por quê.
+Inclui o **site no GitHub Pages** (gerado do `artemishub_docs`): se a mudança altera algo que
+o site descreve, abra também um PR no `artemishub_docs` atualizando a página e cite os dois PRs
+um no outro. Se o PR não mexeu em doc, a descrição diz por quê.
 
 ## 6. Checklist de PR
 
 - [ ] `Closes #<nº>` na descrição e a branch com o número da issue
 - [ ] Título no padrão Conventional Commits (`feat: ...`, `fix: ...`)
-- [ ] Alvo é `staging`; revisão de outra integrante
+- [ ] Alvo é a branch base (`staging` no orquestrador, `main` nos repos filhos); revisão de outra integrante
 - [ ] Testes escritos antes do código e passando (quando o comportamento mudou)
 - [ ] Docs atualizadas, ou a descrição explica por que não
 - [ ] ADR criado ou proposto, se mudou arquitetura, stack ou processo
 - [ ] Revisado contra `references/codigo-limpo.md`
+- [ ] Mudou uma fronteira entre repos? Schema em `contratos/` atualizado e teste de contrato nos dois lados
+- [ ] Mudou agente, prompt ou RAG? Golden set e avaliação rodados, resultado citado no PR; prompt alterado no Langfuse, não no código
 - [ ] Sem `.env`, segredos nem dados pessoais reais em fixtures (LGPD)
 
 ## Agentes sem o Superpowers nativo

@@ -78,7 +78,7 @@ def test_primeiro_push_com_upstream_documentado():
 
 def test_mudancas_no_orquestrador_e_ponteiros_de_submodulo():
     t = _agents()
-    assert "Mudança no próprio orquestrador" in t and "a partir de `main`" in t
+    assert "Mudança no próprio orquestrador" in t and "a partir de `staging` neste repo, e PR para `staging`" in t
     cuidados = t.split("## Submódulos: cuidados")[1]
     assert "new commits" in cuidados and "git add -A" in cuidados
 
@@ -86,10 +86,36 @@ def test_mudancas_no_orquestrador_e_ponteiros_de_submodulo():
 def test_readme_docker_sem_make_e_prune_yes():
     r = _readme()
     for cmd in [
-        'docker compose run --rm rag uv run python -m src.query "',
-        "docker compose run --rm rag uv run python -m src.demo",
+        'docker compose run --rm rag uv run python -m artemis_rag.query "',
+        "docker compose run --rm rag uv run python -m artemis_rag.demo",
         "docker compose run --rm rag uv run pytest -q",
         "make prune-yes",
     ]:
         assert cmd in r, cmd
     assert "`make prune` já usa `--yes`" not in r
+
+
+def test_regra_de_docs_inclui_github_pages():
+    for f in [
+        ROOT / "AGENTS.md",
+        ROOT / ".agents/skills/artemis-sdd/SKILL.md",
+        ROOT / ".claude/skills/artemis-sdd/SKILL.md",
+    ]:
+        assert "GitHub Pages" in f.read_text(encoding="utf-8"), f
+
+
+def test_caminho_dos_adrs_e_o_real():
+    alvos = [
+        ROOT / "AGENTS.md",
+        ROOT / ".agents/skills/artemis-sdd/SKILL.md",
+        ROOT / ".claude/skills/artemis-sdd/SKILL.md",
+    ]
+    for f in alvos:
+        t = f.read_text(encoding="utf-8")
+        assert "arquitetura/decisoes" not in t, f
+        assert "artemishub_docs/docs/adr/" in t, f
+
+
+def test_higiene_cita_o_repo_github_da_org():
+    t = _agents()
+    assert "ArtemisHubApp/.github" in t and "labels.py" in t

@@ -31,10 +31,10 @@ branches: ## Lista branches já mergeadas nos repos
 
 rag-query: ## Consulta o RAG no Docker: make rag-query Q="sua pergunta"
 	@test -n "$(Q)" || { echo "Uso: make rag-query Q=\"sua pergunta\"" >&2; exit 2; }
-	docker compose run --rm rag uv run python -m src.query "$(Q)"
+	docker compose run --rm rag uv run python -m artemis_rag.query "$(Q)"
 
 rag-demo: ## Roda a demo do RAG no Docker
-	docker compose run --rm rag uv run python -m src.demo
+	docker compose run --rm rag uv run python -m artemis_rag.demo
 
 test-%: ## test-<servico> (ex.: make test-rag): roda os testes no Docker
 	docker compose run --rm $* uv run pytest -q

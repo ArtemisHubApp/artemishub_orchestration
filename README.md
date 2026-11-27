@@ -5,8 +5,8 @@ Repo guarda-chuva do **Artemis** (Grupo 11, Residência de IA). Reúne os 5 repo
 | Pasta | O que é |
 |---|---|
 | `artemishub_docs` | Documentação, ADRs e kanban |
-| `artemishub_frontend` | Interface web (sem scaffold) |
-| `artemishub_backend` | API (sem scaffold) |
+| `artemishub_frontend` | Interface web (em construção) |
+| `artemishub_backend` | API: contas, conversas e sessão |
 | `artemishub_agents` | Multiagentes LLM e modelos de ML |
 | `artemishub_rag` | Base de conhecimento com citações |
 
@@ -29,7 +29,7 @@ Abra a pasta no seu agente (Claude Code, Codex, Gemini CLI). Ele lê o `AGENTS.m
 | `python scripts/setup.py` | `make setup` | Baixa os submódulos e deixa cada um na branch base |
 | `python scripts/sync.py` | `make sync` | Atualiza os submódulos sem descartar mudanças locais |
 | `python scripts/status.py` | `make status` | Mostra branch, mudanças, adiantamento e worktrees de cada repo |
-| `python scripts/worktree.py new <repo> <tipo>/<nº>-<slug>` | `make worktree REPO=<repo> BRANCH=<tipo>/<nº>-<slug>` | Cria uma worktree a partir de `origin/staging` |
+| `python scripts/worktree.py new <repo> <tipo>/<nº>-<slug>` | `make worktree REPO=<repo> BRANCH=<tipo>/<nº>-<slug>` | Cria uma worktree a partir da branch base (`staging` aqui; `main` nos repos filhos, que ainda não têm `staging`) |
 | `python scripts/worktree.py list` | - | Lista as worktrees |
 | `python scripts/worktree.py prune` | `make prune` | Ensaio: mostra as worktrees de branches já mergeadas que seriam removidas |
 | `python scripts/worktree.py prune --yes` | `make prune-yes` | Remove essas worktrees (nunca uma sem commit próprio ou com mudanças) |
@@ -40,7 +40,7 @@ Abra a pasta no seu agente (Claude Code, Codex, Gemini CLI). Ele lê o `AGENTS.m
 
 1. Toda tarefa tem uma issue no kanban.
 2. Crie a worktree: `python scripts/worktree.py new rag feat/20-ocr-diretrizes`.
-3. Trabalhe lá, com o agente seguindo o `AGENTS.md` (veja abaixo como abrir o agente). No primeiro push, publique a branch com `git push -u origin <tipo>/<nº>-<slug>` e abra o PR para `staging` com `Closes #<nº>`.
+3. Trabalhe lá, com o agente seguindo o `AGENTS.md` (veja abaixo como abrir o agente). No primeiro push, publique a branch com `git push -u origin <tipo>/<nº>-<slug>` e abra o PR para a branch base (`staging` neste repo, `main` nos repos filhos) com `Closes #<nº>`.
 4. Depois do merge, `python scripts/worktree.py prune --yes` (sem `--yes` é um ensaio que só lista).
 
 ## Como abrir o agente numa tarefa
@@ -59,8 +59,8 @@ Sem Python, uv nem torch na máquina: só o Docker. `docker compose run --rm rag
 
 | Comando (funciona em qualquer sistema, inclusive Windows) | Atalho `make` | O que faz |
 |---|---|---|
-| `docker compose run --rm rag uv run python -m src.query "pergunta"` | `make rag-query Q="pergunta"` | Consulta o RAG |
-| `docker compose run --rm rag uv run python -m src.demo` | `make rag-demo` | Roda a demo do RAG |
+| `docker compose run --rm rag uv run python -m artemis_rag.query "pergunta"` | `make rag-query Q="pergunta"` | Consulta o RAG |
+| `docker compose run --rm rag uv run python -m artemis_rag.demo` | `make rag-demo` | Roda a demo do RAG |
 | `docker compose run --rm rag uv run pytest -q` (ou `agents`) | `make test-rag` / `make test-agents` | Roda os testes do serviço |
 | `docker compose run --rm rag sh` (ou `agents`) | `make shell-rag` / `make shell-agents` | Abre um shell no serviço |
 | - | `make help` | Lista todos os atalhos |
