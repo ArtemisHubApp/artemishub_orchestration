@@ -42,7 +42,7 @@ Nada de código, doc ou configuração sem issue no kanban (rastreabilidade).
 
 - Sem issue, procure antes uma duplicata (`gh search issues --owner ArtemisHubApp "<palavras-chave>"`, abertas e fechadas) e use a existente. Só então crie com `gh issue create` (no repo certo) ou peça o número antes de começar.
 - Siga o padrão de issue do `AGENTS.md` (seção Kanban): título com o prefixo do formulário, corpo com as seções dele, labels `tipo:`, `semana-N` e `prioridade:` e responsável pelo papel.
-- Inclua a issue no quadro (`gh project item-add 1 --owner ArtemisHubApp --url <URL da issue>`) e marque a Semana no card. Sem acesso ao Projects, entregue esse comando pronto à pessoa (ela dá o acesso com `gh auth refresh -s project`).
+- A issue entra no quadro sozinha (workflow `Quadro` do orquestrador, a cada 30 minutos). Para incluir na hora, dispare o workflow com a URL ou rode `gh project item-add 1 --owner ArtemisHubApp --url <URL da issue>`. Depois, marque a Semana no card.
 - Branch e PR carregam o número: `feat/<nº>-<slug>` e `Closes #<nº>` no PR.
 
 ## 3. Worktree, nunca direto na `staging` ou `main`
