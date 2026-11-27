@@ -1,0 +1,84 @@
+# Release em SemVer, reutilizável pelos 6 repos da org (ADR-013).
+# Cria a tag vX.Y.Z na `main` (ou no commit `alvo`) e a release com nome `vX.Y.Z · <tema>` e notas
+# agrupadas pelo tipo dos PRs (Conventional Commits). A versão e as notas vêm de scripts/release.py
+# do orquestrador. Se o alvo já tem uma tag SemVer, não faz nada.
+#
+# Quem chama precisa dar: permissions: { contents: write, pull-requests: read }.
+name: Release (reutilizável)
+
+on:
+  workflow_call:
+    inputs:
+      versao:
+        description: "Força a versão (vX.Y.Z). Vazio: calcula pelos PRs."
+        type: string
+        default: ""
+      alvo:
+        description: "Commit da release. Vazio: a ponta da main."
+        type: string
+        default: ""
+      titulo_release:
+        description: "Título do PR de release (release: <tema>). Vazio: o do PR que gerou o commit."
+        type: string
+        default: ""
+      ref_scripts:
+        description: "Ref do orquestrador de onde vem scripts/release.py."
+        type: string
+        default: main
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - uses: actions/checkout@v4
+        with:
+          repository: ArtemisHubApp/artemishub_orchestration
+          ref: ${{ inputs.ref_scripts }}
+          path: .orquestrador
+          sparse-checkout: scripts/release.py
+          sparse-checkout-cone-mode: false
+      - name: Criar tag e release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          VERSAO: ${{ inputs.versao }}
+          ALVO: ${{ inputs.alvo }}
+          TITULO_RELEASE: ${{ inputs.titulo_release }}
+        run: |
+          set -euo pipefail
+          git fetch --tags --force origin
+          alvo=$(git rev-parse "${ALVO:-origin/main}^{commit}")
+          semver='^v[0-9]+\.[0-9]+\.[0-9]+$'
+          ja_tem=$(git tag --points-at "$alvo" | grep -E "$semver" | head -n 1 || true)
+          if [ -n "$ja_tem" ]; then
+            echo "O commit $alvo já tem a tag $ja_tem; nada a fazer."
+            exit 0
+          fi
+          anterior=$(git tag --merged "$alvo" --sort=-v:refname | grep -E "$semver" | head -n 1 || true)
+          ate=$(git show -s --format=%ct "$alvo")
+          desde=0
+          [ -n "$anterior" ] && desde=$(git show -s --format=%ct "$anterior^{commit}")
+
+          gh pr list --repo "$REPO" --state merged --limit 1000 --json number,title,author,mergedAt \
+            | jq --argjson desde "$desde" --argjson ate "$ate" \
+                '[.[] | (.mergedAt | sub("\\.[0-9]+"; "") | fromdate) as $em
+                      | select($em > $desde and $em <= $ate)]' > prs.json
+
+          titulo="${TITULO_RELEASE:-}"
+          if [ -z "$titulo" ]; then
+            titulo=$(gh api "repos/$REPO/commits/$alvo/pulls" --jq '.[0].title // ""' 2>/dev/null || true)
+          fi
+
+          python3 .orquestrador/scripts/release.py --anterior "$anterior" --titulo-release "$titulo" \
+            --repo "$REPO" --prs prs.json --versao "${VERSAO:-}" > release.json
+          versao=$(jq -r .versao release.json)
+          nome=$(jq -r .nome release.json)
+          jq -r .notas release.json > notas.md
+
+          gh release create "$versao" --repo "$REPO" --target "$alvo" --title "$nome" --notes-file notas.md
+          echo "Release $nome criada em $alvo (anterior: ${anterior:-nenhuma})."
