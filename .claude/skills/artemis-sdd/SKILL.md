@@ -20,7 +20,7 @@ Diga a classificação e o porquê numa linha antes de começar.
 | **S1** | Mudança pequena e clara, sem decisão de design | Plano curto com critérios de aceite; teste antes do código se o comportamento mudar. |
 | **S2/S3** | Funcionalidade nova, mudança que cruza módulos, risco alto ou decisão de arquitetura | Fluxo completo do Superpowers: `brainstorming` → spec → `writing-plans` → `test-driven-development` → `subagent-driven-development` ou `executing-plans` → `requesting-code-review` → `finishing-a-development-branch`. |
 
-Na dúvida entre dois tamanhos, escolha o maior. Complexidade e risco (dados pessoais, segurança,
+Na dúvida entre dois tamanhos, escolha o maior. Complexidade e risco (dados pessoais, segurança, contrato entre repositórios, comportamento da IA visível à usuária,
 produção) sobem o tamanho.
 
 ## 2. Toda tarefa tem issue
@@ -38,10 +38,12 @@ python scripts/worktree.py new <repo> <tipo>/<nº>-<slug>
 ```
 
 Exemplo: `python scripts/worktree.py new rag feat/20-ocr-diretrizes`. Tipos: `feat`, `fix`,
-`chore`, `docs`, `refactor`, `test`, `ci`. A worktree nasce de `origin/staging`, fica em
-`../artemishub-worktrees/<repo>/<branch>/` e o PR vai para `staging`. Nunca commite direto em
-`staging` nem em `main`. O checkout local do submódulo pode estar atrasado: use `git fetch` e
-`git show origin/staging:<arquivo>` para ver o estado real.
+`chore`, `docs`, `refactor`, `test`, `ci`. A worktree nasce da branch base do repo e fica em
+`../artemishub-worktrees/<repo>/<branch>/`. No orquestrador a base é `staging` e o PR vai para
+`staging`; os repos filhos ainda não têm `staging`, então neles a base é a `main` e o PR vai para
+a `main`, sempre revisado. Nunca commite direto em `staging` nem em `main`. O checkout local do
+submódulo pode estar atrasado: use `git fetch` e `git show origin/<base>:<arquivo>` para ver o
+estado real.
 
 ## 4. Onde salvar cada coisa
 
@@ -65,11 +67,13 @@ um no outro. Se o PR não mexeu em doc, a descrição diz por quê.
 
 - [ ] `Closes #<nº>` na descrição e a branch com o número da issue
 - [ ] Título no padrão Conventional Commits (`feat: ...`, `fix: ...`)
-- [ ] Alvo é `staging`; revisão de outra integrante
+- [ ] Alvo é a branch base (`staging` no orquestrador, `main` nos repos filhos); revisão de outra integrante
 - [ ] Testes escritos antes do código e passando (quando o comportamento mudou)
 - [ ] Docs atualizadas, ou a descrição explica por que não
 - [ ] ADR criado ou proposto, se mudou arquitetura, stack ou processo
 - [ ] Revisado contra `references/codigo-limpo.md`
+- [ ] Mudou uma fronteira entre repos? Schema em `contratos/` atualizado e teste de contrato nos dois lados
+- [ ] Mudou agente, prompt ou RAG? Golden set e avaliação rodados, resultado citado no PR; prompt alterado no Langfuse, não no código
 - [ ] Sem `.env`, segredos nem dados pessoais reais em fixtures (LGPD)
 
 ## Agentes sem o Superpowers nativo
