@@ -87,7 +87,7 @@ Regras completas, com os 4 princípios (pense antes, simplicidade, mudança cir�
 
 ## Decisões (ADR)
 
-Toda decisão que muda arquitetura, stack ou processo gera um ADR em `artemishub_docs/docs/adr/` (`NNN-titulo.md` com o próximo número livre, 3 dígitos, no formato do ADR-002: contexto, decisão, alternativas, consequências, status; entrada no `nav` do `mkdocs.yml` e na tabela de `docs/adr/index.md`), no mesmo ciclo da mudança. O agente propõe o rascunho; a equipe aprova no PR. O orquestrador não guarda ADRs.
+Toda decisão que muda arquitetura, stack ou processo gera um ADR em `artemishub_docs/docs/adr/` (`NNN-titulo.md` com o próximo número livre, 3 dígitos, no formato do ADR-002: contexto, decisão, alternativas, consequências, status; entrada no `nav` do `mkdocs.yml` e na tabela de `docs/adr/index.md`), no mesmo ciclo da mudança. O agente propõe o rascunho; a equipe aprova no PR. Quando o PR do ADR é aprovado, o status passa de "proposto" para "aceito" **no mesmo PR**, no arquivo e na tabela de `docs/adr/index.md`; um ADR substituído fica "substituído pelo ADR-NNN". O orquestrador não guarda ADRs.
 
 ## Kanban
 
@@ -109,7 +109,16 @@ Ao criar uma issue, inclua no quadro e confira se entrou (não conte com a inclu
 gh project item-add 1 --owner ArtemisHubApp --url <URL da issue>
 ```
 
-Marque a Semana no card, mova para In Progress ao começar e use `Closes #<nº>` no PR. Detalhes em [kanban.md](artemishub_docs/docs/guias/kanban.md).
+Marque a Semana no card, mova para In Progress ao começar e use `Closes #<nº>` no PR.
+
+Padrão de toda issue (é o que os formulários do repo `.github` produzem):
+
+- **Título** com o prefixo do formulário: `feat:`, `fix:`, `chore:` ou `docs:`, em português depois dos dois-pontos.
+- **Corpo** com as seções do formulário (por exemplo: o que resolve, o que fica de fora, critérios de aceite, semana, repositório afetado).
+- **Labels** `tipo: …`, `semana-N` e `prioridade: alta|média|baixa`.
+- **Responsável** pelo papel de cada uma na [página da equipe](artemishub_docs/docs/sobre/equipe.md): dados e DevOps (Camila), arquitetura e engenharia de software (Amanda), ciência de dados (Ana Julia), ciência de dados e arquitetura (Eduarda).
+
+Agente sem acesso ao Projects (por exemplo, numa sessão na nuvem) cria a issue e entrega à pessoa o comando `gh project item-add` pronto; a tarefa só termina quando a issue está no quadro. Para dar o acesso no seu computador: `gh auth refresh -s project`. Detalhes em [kanban.md](artemishub_docs/docs/guias/kanban.md).
 
 ## IA e dados
 

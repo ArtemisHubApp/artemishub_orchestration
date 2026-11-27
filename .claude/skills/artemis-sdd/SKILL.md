@@ -41,7 +41,8 @@ Na dúvida, escolha o risco maior. Baixar o risco depois exige concordância da 
 Nada de código, doc ou configuração sem issue no kanban (rastreabilidade).
 
 - Sem issue, procure antes uma duplicata (`gh search issues --owner ArtemisHubApp "<palavras-chave>"`, abertas e fechadas) e use a existente. Só então crie com `gh issue create` (no repo certo) ou peça o número antes de começar.
-- Inclua a issue no quadro (`gh project item-add 1 --owner ArtemisHubApp --url <URL da issue>`) e marque a Semana no card.
+- Siga o padrão de issue do `AGENTS.md` (seção Kanban): título com o prefixo do formulário, corpo com as seções dele, labels `tipo:`, `semana-N` e `prioridade:` e responsável pelo papel.
+- Inclua a issue no quadro (`gh project item-add 1 --owner ArtemisHubApp --url <URL da issue>`) e marque a Semana no card. Sem acesso ao Projects, entregue esse comando pronto à pessoa (ela dá o acesso com `gh auth refresh -s project`).
 - Branch e PR carregam o número: `feat/<nº>-<slug>` e `Closes #<nº>` no PR.
 
 ## 3. Worktree, nunca direto na `staging` ou `main`
@@ -82,7 +83,7 @@ um no outro. Se o PR não mexeu em doc, a descrição diz por quê.
 - [ ] Alvo é `staging`; revisão de outra integrante
 - [ ] Testes escritos antes do código e passando (quando o comportamento mudou)
 - [ ] Docs atualizadas, ou a descrição explica por que não
-- [ ] ADR criado ou proposto, se mudou arquitetura, stack ou processo
+- [ ] ADR criado ou proposto, se mudou arquitetura, stack ou processo; ADR aprovado no PR passa para "aceito" no mesmo PR
 - [ ] Revisado contra `references/codigo-limpo.md`
 - [ ] Mudou uma fronteira entre repos? Schema em `contratos/` atualizado e teste de contrato nos dois lados
 - [ ] Mudou agente, prompt ou RAG? Golden set e avaliação rodados, resultado citado no PR; prompt alterado no Langfuse, não no código
