@@ -23,6 +23,19 @@ Diga a classificação e o porquê numa linha antes de começar.
 Na dúvida entre dois tamanhos, escolha o maior. Complexidade e risco (dados pessoais, segurança, contrato entre repositórios, comportamento da IA visível à usuária,
 produção) sobem o tamanho.
 
+### Risco (R0 a R3): profundidade da revisão
+
+Tamanho e risco são independentes: um diff pequeno não é prova de segurança. Diga os dois.
+
+| Risco | Quando | Revisão |
+|---|---|---|
+| **R0** | Documentação ou mudança mecânica, sem efeito no comportamento | revisão normal do PR |
+| **R1** | Comportamento interno, entradas confiáveis, reversível | revisão normal + testes |
+| **R2** | Dado de fora (upload de currículo, texto da usuária, documento do RAG), parsing, prompt ou comportamento da IA visível à usuária, contrato entre repositórios | revisão de outra integrante focada no risco; avaliação ou teste de contrato citados no PR |
+| **R3** | Autenticação, sessão, segredos, dados pessoais (LGPD), migração de banco irreversível, deploy | duas revisoras, ou uma revisora mais o `requesting-code-review`; plano de rollback no PR |
+
+Na dúvida, escolha o risco maior. Baixar o risco depois exige concordância da equipe no PR.
+
 ## 2. Toda tarefa tem issue
 
 Nada de código, doc ou configuração sem issue no kanban (rastreabilidade).
