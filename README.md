@@ -47,7 +47,7 @@ Abra a pasta no seu agente (Claude Code, Codex, Gemini CLI). Ele lê o `AGENTS.m
 
 ## Branches e release
 
-Todos os repos têm `staging`, que é a branch padrão; a `main` é produção (o site do docs publica a partir dela). Os PRs vão para `staging` com squash. Quando a `staging` estiver estável, abra o PR `release: <data>` de `staging` para `main` e mescle com **merge commit**. O workflow `Release` cria sozinho a tag `vAAAA.MM.DD` e a release no GitHub, apontando para a `main`.
+Todos os repos têm `staging`, que é a branch padrão; a `main` é produção (o site do docs publica a partir dela). Os PRs vão para `staging` com squash. Quando a `staging` estiver estável, abra o PR `release: <data>` de `staging` para `main` e mescle com **merge commit**. O workflow `Release` cria sozinho a release em **SemVer** (`vX.Y.Z`, nome `vX.Y.Z · <tema>` e notas por seção), apontando para a `main`. A versão sai dos títulos dos PRs: `feat!:` sobe o major (o minor antes da `1.0.0`), `feat:` o minor e o resto o patch ([ADR-013](https://artemishubapp.github.io/artemishub_docs/adr/013-semver-e-releases/)).
 
 ## Workflows deste repo
 
@@ -56,7 +56,8 @@ Todos os repos têm `staging`, que é a branch padrão; a `main` é produção (
 | `CI` | PRs e pushes | Testes do orquestrador e validação das skills |
 | `Gitleaks` | PRs e pushes | Procura segredos commitados |
 | `Python CI` | chamado pelos repos filhos | CI reutilizável: lint, testes, título do PR, sem cópia de skills |
-| `Release` | merge de um PR `release:` na `main`, e à mão | Cria a tag `vAAAA.MM.DD` (sufixo `b`, `c`… no mesmo dia) e a release com as notas dos PRs |
+| `Release` | merge de um PR `release:` na `main`, e à mão | Chama o `release-reutilizavel.yml`: tag SemVer, nome e notas por seção |
+| `Release (reutilizável)` | chamado pelo `Release` de cada repo | Calcula a versão com `scripts/release.py` e publica a release |
 | `Quadro` | a cada 30 minutos e à mão | Inclui no quadro as issues abertas da org; à mão, com `incluir_fechadas`, inclui também as fechadas em Done. Usa o secret da org `ADD_TO_PROJECT_PAT` |
 
 ## Como abrir o agente numa tarefa
