@@ -144,3 +144,19 @@ def test_quadro_inclui_issues_da_org():
     assert "--state closed" in r and "item-edit" in r and '"Done"' in r
     # A entrada do disparo manual chega por variável de ambiente, nunca interpolada no script.
     assert "${{" not in r
+
+
+def test_release_cria_tag_e_release_na_main():
+    """Merge de PR `release:` na main (ou disparo manual) cria a tag vAAAA.MM.DD e a release na main."""
+    wf = load("release.yml")
+    g = gatilhos(wf)
+    assert g["push"]["branches"] == ["main"] and "workflow_dispatch" in g
+    assert wf["permissions"] == {"contents": "write"}
+    job = wf["jobs"]["release"]
+    assert "release:" in job["if"]
+    r = runs(job)
+    assert "gh release create" in r and "--generate-notes" in r
+    assert '--target "$alvo"' in r and "origin/main" in r
+    assert "America/Sao_Paulo" in r
+    # Nenhuma expressão do Actions interpolada no script.
+    assert "${{" not in r

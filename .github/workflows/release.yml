@@ -1,0 +1,53 @@
+# Cria a tag vAAAA.MM.DD (horário de Brasília) e a release no GitHub quando um PR `release:`
+# é mesclado na main. No mesmo dia, as seguintes ganham sufixo: vAAAA.MM.DDb, vAAAA.MM.DDc…
+# A tag sempre aponta para a main. Se a main já tem uma tag de release, não faz nada.
+# Também pode ser disparado à mão (Actions → Release → Run workflow).
+name: Release
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    # No push, só o merge de um PR `release:` (o título do PR vai na mensagem do merge commit).
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, 'release:')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - name: Criar tag e release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          git fetch --tags --force origin
+          alvo=$(git rev-parse origin/main)
+          ja_tem=$(git tag --points-at "$alvo" --list 'v[0-9]*' | head -n 1)
+          if [ -n "$ja_tem" ]; then
+            echo "A main já tem a tag $ja_tem; nada a fazer."
+            exit 0
+          fi
+          base="v$(TZ=America/Sao_Paulo date +%Y.%m.%d)"
+          tag="$base"
+          for sufixo in b c d e f g h i j; do
+            git rev-parse -q --verify "refs/tags/$tag" > /dev/null || break
+            tag="$base$sufixo"
+          done
+          if git rev-parse -q --verify "refs/tags/$tag" > /dev/null; then
+            echo "::error::Já existem releases demais hoje ($base até $tag)."
+            exit 1
+          fi
+          gh release create "$tag" --target "$alvo" --title "$tag" --generate-notes
+          echo "Release $tag criada na main ($alvo)."

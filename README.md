@@ -47,7 +47,7 @@ Abra a pasta no seu agente (Claude Code, Codex, Gemini CLI). Ele lê o `AGENTS.m
 
 ## Branches e release
 
-Todos os repos têm `staging`, que é a branch padrão; a `main` é produção (o site do docs publica a partir dela). Os PRs vão para `staging` com squash. Quando a `staging` estiver estável, abra o PR `release: <data>` de `staging` para `main` e mescle com **merge commit**. Depois, crie a release no GitHub com a tag `vAAAA.MM.DD` apontando para a `main`.
+Todos os repos têm `staging`, que é a branch padrão; a `main` é produção (o site do docs publica a partir dela). Os PRs vão para `staging` com squash. Quando a `staging` estiver estável, abra o PR `release: <data>` de `staging` para `main` e mescle com **merge commit**. O workflow `Release` cria sozinho a tag `vAAAA.MM.DD` e a release no GitHub, apontando para a `main`.
 
 ## Workflows deste repo
 
@@ -56,6 +56,7 @@ Todos os repos têm `staging`, que é a branch padrão; a `main` é produção (
 | `CI` | PRs e pushes | Testes do orquestrador e validação das skills |
 | `Gitleaks` | PRs e pushes | Procura segredos commitados |
 | `Python CI` | chamado pelos repos filhos | CI reutilizável: lint, testes, título do PR, sem cópia de skills |
+| `Release` | merge de um PR `release:` na `main`, e à mão | Cria a tag `vAAAA.MM.DD` (sufixo `b`, `c`… no mesmo dia) e a release com as notas dos PRs |
 | `Quadro` | a cada 30 minutos e à mão | Inclui no quadro as issues abertas da org; à mão, com `incluir_fechadas`, inclui também as fechadas em Done. Usa o secret da org `ADD_TO_PROJECT_PAT` |
 
 ## Como abrir o agente numa tarefa
