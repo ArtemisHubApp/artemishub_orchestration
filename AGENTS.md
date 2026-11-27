@@ -16,7 +16,10 @@ Plataforma que usa IA para apoiar mulheres em STEM com análise de currículo, i
 | `artemishub_agents` | Sistema multiagentes LLM e modelos de ML | Python 3.12+, uv, DVC | `uv run pytest` |
 | `artemishub_rag` | Base de conhecimento com citações | Python 3.11 a 3.13, ChromaDB, uv | `python -m artemis_rag.demo` e `python -m artemis_rag.query "<pergunta>"` (com `uv run` na frente) |
 
-Fluxo dos dados: frontend → backend → agents → rag.
+Arquitetura ([ADR-012](artemishub_docs/docs/adr/012-implantacao-e-pipelines-de-dados.md), diagramas em [Visões C4](artemishub_docs/docs/arquitetura/visoes-c4.md)):
+
+- **Plano de serviço** (o que a usuária usa): frontend (PWA) → gateway → backend → agents, com o RAG e as tabelas da RAIS dentro da imagem dos agents. O leitor de currículo (PDF e foto) é um container isolado, chamado pelo backend. Dados pessoais ficam só no Postgres do backend.
+- **Plano de dados** (batch): DAGs do Airflow, rodando efêmeras no GitHub Actions, atualizam o índice do RAG e as tabelas da RAIS e publicam com DVC no DagsHub. O CI coloca esses artefatos na imagem dos agents.
 
 ## Regra de ouro
 
@@ -40,7 +43,7 @@ Skills disponíveis (`.agents/skills/`): `artemis-sdd`, `brainstorming`, `writin
 
 ## Branches e worktrees
 
-Todo trabalho nasce numa worktree com branch própria, criada a partir de `origin/staging`. O PR vai para `staging`. A `main` é produção e só recebe o PR `release: <data>` de `staging` para `main`.
+Todo trabalho nasce numa worktree com branch própria, criada a partir da branch base do repo. Neste orquestrador a base é `staging`: o PR vai para `staging`, e a `main` só recebe o PR `release: <data>` de `staging` para `main`. **Os repos filhos ainda não têm `staging`**: neles a base é a `main`, e o PR vai direto para ela, sempre revisado.
 
 ```
 python scripts/worktree.py new <repo> <tipo>/<nº>-<slug>
@@ -107,6 +110,14 @@ gh project item-add 1 --owner ArtemisHubApp --url <URL da issue>
 ```
 
 Marque a Semana no card, mova para In Progress ao começar e use `Closes #<nº>` no PR. Detalhes em [kanban.md](artemishub_docs/docs/guias/kanban.md).
+
+## IA e dados
+
+- **Contratos entre repos:** o backend publica `contratos/openapi.json` (para o frontend) e `contratos/*.schema.json` (para os agents e o leitor). Mudou uma fronteira? O schema muda no mesmo PR, com teste de contrato nos dois lados. Mudança incompatível vira uma versão nova (`/v2`).
+- **Prompts só no Langfuse:** o código busca o prompt pelo nome e pelo rótulo; nunca cole o texto do prompt no código.
+- **Avaliação:** mudou agente, prompt ou RAG? Rode o golden set e a avaliação do RAG e cite o resultado no PR (RNF-11 e RNF-12).
+- **Dados e experimentos:** datasets e índices versionados com DVC no DagsHub; experimentos de ML registrados no MLflow; nada de dado pessoal real em dataset, fixture, log ou trace.
+- **Dados pessoais:** ficam só no Postgres do backend. Agents e leitor não guardam estado da usuária (o checkpointer da negociação está em [docs#50](https://github.com/ArtemisHubApp/artemishub_docs/issues/50)).
 
 ## Segurança
 
