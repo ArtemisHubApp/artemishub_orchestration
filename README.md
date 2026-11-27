@@ -29,7 +29,7 @@ Abra a pasta no seu agente (Claude Code, Codex, Gemini CLI). Ele lê o `AGENTS.m
 | `python scripts/setup.py` | `make setup` | Baixa os submódulos e deixa cada um na branch base |
 | `python scripts/sync.py` | `make sync` | Atualiza os submódulos sem descartar mudanças locais |
 | `python scripts/status.py` | `make status` | Mostra branch, mudanças, adiantamento e worktrees de cada repo |
-| `python scripts/worktree.py new <repo> <tipo>/<nº>-<slug>` | `make worktree REPO=<repo> BRANCH=<tipo>/<nº>-<slug>` | Cria uma worktree a partir da branch base (`staging` aqui; `main` nos repos filhos, que ainda não têm `staging`) |
+| `python scripts/worktree.py new <repo> <tipo>/<nº>-<slug>` | `make worktree REPO=<repo> BRANCH=<tipo>/<nº>-<slug>` | Cria uma worktree a partir de `origin/staging` |
 | `python scripts/worktree.py list` | - | Lista as worktrees |
 | `python scripts/worktree.py prune` | `make prune` | Ensaio: mostra as worktrees de branches já mergeadas que seriam removidas |
 | `python scripts/worktree.py prune --yes` | `make prune-yes` | Remove essas worktrees (nunca uma sem commit próprio ou com mudanças) |
@@ -40,7 +40,7 @@ Abra a pasta no seu agente (Claude Code, Codex, Gemini CLI). Ele lê o `AGENTS.m
 
 1. Toda tarefa tem uma issue no kanban.
 2. Crie a worktree: `python scripts/worktree.py new rag feat/20-ocr-diretrizes`.
-3. Trabalhe lá, com o agente seguindo o `AGENTS.md` (veja abaixo como abrir o agente). No primeiro push, publique a branch com `git push -u origin <tipo>/<nº>-<slug>` e abra o PR para a branch base (`staging` neste repo, `main` nos repos filhos) com `Closes #<nº>`.
+3. Trabalhe lá, com o agente seguindo o `AGENTS.md` (veja abaixo como abrir o agente). No primeiro push, publique a branch com `git push -u origin <tipo>/<nº>-<slug>` e abra o PR para `staging` com `Closes #<nº>`.
 4. Depois do merge, `python scripts/worktree.py prune --yes` (sem `--yes` é um ensaio que só lista).
 
 ## Como abrir o agente numa tarefa

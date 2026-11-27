@@ -51,12 +51,11 @@ python scripts/worktree.py new <repo> <tipo>/<nº>-<slug>
 ```
 
 Exemplo: `python scripts/worktree.py new rag feat/20-ocr-diretrizes`. Tipos: `feat`, `fix`,
-`chore`, `docs`, `refactor`, `test`, `ci`. A worktree nasce da branch base do repo e fica em
-`../artemishub-worktrees/<repo>/<branch>/`. No orquestrador a base é `staging` e o PR vai para
-`staging`; os repos filhos ainda não têm `staging`, então neles a base é a `main` e o PR vai para
-a `main`, sempre revisado. Nunca commite direto em `staging` nem em `main`. O checkout local do
-submódulo pode estar atrasado: use `git fetch` e `git show origin/<base>:<arquivo>` para ver o
-estado real.
+`chore`, `docs`, `refactor`, `test`, `ci`. A worktree nasce de `origin/staging`, fica em
+`../artemishub-worktrees/<repo>/<branch>/` e o PR vai para `staging` (todos os repos têm
+`staging`; a `main` só recebe o release). Nunca commite direto em `staging` nem em `main`. O
+checkout local do submódulo pode estar atrasado: use `git fetch` e
+`git show origin/staging:<arquivo>` para ver o estado real.
 
 ## 4. Onde salvar cada coisa
 
@@ -80,7 +79,7 @@ um no outro. Se o PR não mexeu em doc, a descrição diz por quê.
 
 - [ ] `Closes #<nº>` na descrição e a branch com o número da issue
 - [ ] Título no padrão Conventional Commits (`feat: ...`, `fix: ...`)
-- [ ] Alvo é a branch base (`staging` no orquestrador, `main` nos repos filhos); revisão de outra integrante
+- [ ] Alvo é `staging`; revisão de outra integrante
 - [ ] Testes escritos antes do código e passando (quando o comportamento mudou)
 - [ ] Docs atualizadas, ou a descrição explica por que não
 - [ ] ADR criado ou proposto, se mudou arquitetura, stack ou processo
