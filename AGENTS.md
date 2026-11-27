@@ -43,7 +43,7 @@ Skills disponíveis (`.agents/skills/`): `artemis-sdd`, `brainstorming`, `writin
 
 ## Branches e worktrees
 
-Todo trabalho nasce numa worktree com branch própria, criada a partir de `origin/staging`. Todos os repos têm `staging`, que é a branch padrão: o PR vai para `staging`, sempre revisado, e a `main` (produção; o site do docs publica a partir dela) só recebe o PR `release: <data>` de `staging` para `main`, com merge commit. Depois do release, crie a release no GitHub com a tag `vAAAA.MM.DD` apontando para a `main`.
+Todo trabalho nasce numa worktree com branch própria, criada a partir de `origin/staging`. Todos os repos têm `staging`, que é a branch padrão: o PR vai para `staging`, sempre revisado, e a `main` (produção; o site do docs publica a partir dela) só recebe o PR `release: <data>` de `staging` para `main`, com merge commit. Ao mesclar o release, o workflow `Release` cria sozinho a tag `vAAAA.MM.DD` (com sufixo `b`, `c`… se houver outra no mesmo dia) e a release no GitHub, apontando para a `main`; também dá para dispará-lo à mão (Actions → Release).
 
 ```
 python scripts/worktree.py new <repo> <tipo>/<nº>-<slug>
